@@ -159,3 +159,4 @@ rev/outputs/
 # scBridge: GPU required to regenerate
 # cicero: 1-2 hours to compute coaccessibility
 !fig3/results/
+data/GSE291468/*.smooth150.bw
