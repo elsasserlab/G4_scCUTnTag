@@ -2,41 +2,41 @@
 
 **Figure 1: G4 profiling by scCUT&Tag separates different cell types.**
 
-## Data sources used throughout Figure 1
+## Data sources
 
-All single-cell G4/CUT&Tag data come from **GSE291468**:
+All data from **GSE291468**:
 
-- **mESC-MEF single-cell mixture (GSM8836088)** — processed Seurat object, Cell Ranger fragment file, per-cluster MACS2 peak sets and RPGC-normalized cluster signal tracks.
-- **Bulk mESC G4 CUT&Tag (GSM8836082, GSM8836083)** — two replicates; broadPeak peak calls and RPGC bigWigs.
-- **Bulk MEF/3T3 G4 CUT&Tag (GSM8836084, GSM8836085)** — two replicates; broadPeak peak calls and RPGC bigWigs.
-- **mESC ATAC-seq (GSE149080, GSM4661960)** — RPGC track and narrowPeak calls, used for cross-assay comparison.
-- **3T3 ATAC-seq (GSE211123, GSM6451000)** — RPGC track and narrowPeak calls.
-- **PQS (G-quadruplex-predicting sequence) scores** — genome-wide pqsfinder predictions on mm10 (in-house track; a minimum-score BED and a score bigWig are used).
+- **mESC-MEF single-cell mixture (GSM8836088)** — processed Seurat object, Cell Ranger fragment file (`GSM8836088_fragments.tsv.gz`), per-cluster MACS2 narrowPeak sets, RPGC-normalized bigWig tracks
+- **Bulk mESC G4 CUT&Tag (GSM8836082, GSM8836083)** — broadPeak calls and RPGC bigWigs
+- **Bulk MEF/3T3 G4 CUT&Tag (GSM8836084, GSM8836085)** — broadPeak calls and RPGC bigWigs
+- **mESC ATAC-seq (GSE149080, GSM4661960)** — RPGC bigWig and narrowPeak calls
+- **3T3 ATAC-seq (GSE211123, GSM6451000)** — RPGC bigWig and narrowPeak calls
+- **PQS scores** — pqsfinder predictions on mm10 (`PQS_scores.mm10.bed`, `PQS_scores.mm10.bw`)
 
-Panels are produced by the R script `fig1/fig1.R` (panel-by-panel) with supporting preprocessing in `fig1/seurat_workflow.R`.
+Produced by `fig1/fig1.R` with preprocessing in `fig1/seurat_workflow.R`.
 
 ## Panels
 
-**Panel B — UMAP of the mESC-MEF mixture.** Dimensionality reduction (LSI → UMAP) and SNN clustering (resolution 0.1) of the GSM8836088 single-cell object; cells are colored by the two Seurat clusters (MEF = cluster 0, mESC = cluster 1). Tool: Seurat `DimPlot`.
+**Panel B — UMAP of the mESC-MEF mixture.** LSI dimensionality reduction → UMAP (n = 10 dimensions, local connectivity = 15, min dist = 0.5) and SNN clustering (resolution 0.1) of GSM8836088 Seurat object; cells colored by two clusters (MEF = cluster 0, mESC = cluster 1). Tool: Seurat `DimPlot()`. Output: `panel_B_umap.pdf`.
 
-**Panel C — QC violin plots.** Distribution of per-cell quality metrics (number of peak features, peak counts, TSS fragments, mitochondrial fragments, fraction of reads in peaks [FRiP], TSS enrichment, nucleosome signal) split by cluster, computed with Seurat/Signac from the GSM8836088 peak matrix and fragment file. Medians and means are overlaid.
+**Panel C — QC violin plots.** Seven per-cell metrics computed with Signac: nFeature_peaks, nCount_peaks, TSS_fragments (from `TSSEnrichment()`), mitochondrial fragments, FRiP (peak_region_fragments / passed_filters), TSS_enrichment (`TSSEnrichment(fast=TRUE)`), nucleosome_signal (`NucleosomeSignal()`). Plotted as violin plots per cluster with median (crossbar) and mean (point) overlaid. Tool: Seurat `VlnPlot()`. Output: `panel_C_qc.pdf` (7 plots, 2×4 grid).
 
-**Panel D — Peak-overlap Euler/Venn diagrams.** Pairwise overlaps of the two mESC-MEF cluster peak sets (GSM8836088 cluster-specific narrowPeak calls) with the bulk mESC (GSM8836082) and bulk MEF (GSM8836084) broadPeak sets, drawn as two Euler diagrams with overlap counts. Tools: `GenomicRanges` and `bedscout::plot_euler`.
+**Panel D — Peak-overlap Euler diagrams.** Two diagrams: (left) cluster0 vs cluster1 vs bulk mESC (GSM8836082 broadPeak); (right) cluster0 vs cluster1 vs bulk MEF (GSM8836084 broadPeak). Peaks imported with `rtracklayer::import()`, overlaps computed with `bedscout::plot_euler()`. Output: `panel_D_venn.pdf`, `panel_D_venn_counts.csv`.
 
-**Panel E — PCA of marker regions.** Differentially enriched marker peaks are identified with Seurat `FindAllMarkers` (logistic-regression test with fragment count as latent variable) on the GSM8836088 object. Principal-component analysis is then performed on RPGC-normalized signal at these marker regions across six tracks: the two single-cell clusters (GSM8836088) and the two bulk replicates of mESC (GSM8836082, GSM8836083) and MEF (GSM8836084, GSM8836085). Cluster 0 and cluster 1 group with the MEF and mESC bulk replicates, respectively.
+**Panel E — PCA of marker regions.** Marker peaks identified with Seurat `FindAllMarkers()` (logistic regression, fragment count as latent variable, only.pos=TRUE). PCA performed on RPGC-normalized signal (computed with `wigglescout::bw_loci()`) at marker regions across six bigWig tracks: cluster0, cluster1, GSM8836082, GSM8836083, GSM8836084, GSM8836085. Plotted as binary PCA (samples present/absent) and continuous PCA. Tools: Seurat, wigglescout, ggplot2 `prcomp()`. Outputs: `panel_E_binary.pdf`, `panel_E_pca.pdf`, `panel_E_marker_regions.mm10.bed`.
 
-**Panel F — G4 occupancy heatmaps and average profiles.** Peak regions are classified into cluster-0-only, shared, and cluster-1-only sets from summit-centered narrowPeak windows (GSM8836088). For each class, G4 occupancy (±3 kb around peak center, RPGC normalized) is shown as average-profile curves and heatmaps for: bulk mESC/MEF G4 CUT&Tag (GSM8836082, GSM8836084), single-cell cluster tracks (GSM8836088), mESC/3T3 ATAC-seq (GSE149080 GSM4661960, GSE211123 GSM6451000), and PQS score. Heatmap rows are sorted by the matching cluster signal. Tools: `wigglescout::plot_bw_heatmap` and `wigglescout::plot_bw_profile`.
+**Panel F — G4 occupancy heatmaps and average profiles.** Summit-centered regions (±250 bp from narrowPeak summit) classified as cluster0-only, shared (both), cluster1-only using `GenomicRanges::findOverlaps()` and `reduce()`. For each class, RPGC signal (±3 kb around center) shown as average-profile curves and heatmaps for seven bigWigs: GSM8836082 (bulk mESC), GSM8836084 (bulk MEF), GSM8836088_cluster0, GSM8836088_cluster1, GSM4661960 (mESC ATAC), GSM6451000 (MEF ATAC), PQS_scores.mm10.bw. Heatmaps computed with `wigglescout::plot_bw_heatmap()` (zmax = 99th percentile per track, capped at 100 rows per category, rows sorted by cluster track signal). Profiles computed with `wigglescout::plot_bw_profile()` (show_error=TRUE). Tools: wigglescout, GenomicRanges, cowplot. Outputs: `panel_F_*.pdf` (7 composite PDFs), `panel_F_merged_peaks.bed`, `panel_F_gene_sets.tsv`, `panel_F_GO_Biological_Process_2023.tsv`.
 
-**Panel G — enrichR GO Biological Process heatmap.** Top significant GO-BP terms (top 10 per category) for the cluster-0-only, shared, and cluster-1-only peak sets of Panel F, queried against the Enrichr GO_Biological_Process_2023 library; heatmap shows −log10 P-values.
+**Panel G — enrichR GO Biological Process heatmap.** Peak-associated genes from Panel F (cluster0-only, shared, cluster1-only) queried against Enrichr GO_Biological_Process_2023 library with `enrichR::enrichr()`. Top 10 terms per category by adjusted P-value shown as heatmap (−log10 P). Tool: enrichR, ComplexHeatmap. Outputs: `panel_G_enrichR_heatmap.pdf`, `panel_G_enrichR_GO_terms.csv`.
 
-**Panel H — Genome browser tracks.** Representative cluster-specific G4 loci at the marker genes *Lin28a* (mESC) and *Cdhr3* (MEF), showing single-cell fragment coverage, the cluster-specific peak, and bulk tracks over ±10 kb. Tool: Signac `CoveragePlot` from the GSM8836088 fragment file.
+**Panel H — Genome browser tracks.** Two loci: *Lin28a* (mESC marker) and *Cdhr3* (MEF marker). Fragment coverage from GSM8836088 Cell Ranger fragments (`GSM8836088_fragments.tsv.gz`) plotted with Signac `CoveragePlot()` (peaks=TRUE, features=TRUE, flank=10kb). Tool: Signac `CoveragePlot()` using EnsDb.Mmusculus.v79 annotation. Outputs: `panel_H_Lin28a.pdf`, `panel_H_Cdhr3.pdf`.
 
-## Supplementary panels produced alongside Figure 1
+## Supplementary panels
 
-**Panel S1 — Spearman correlation heatmap.** Spearman correlation of RPGC signal among the two cluster tracks and the mESC/MEF bulk tracks at positive marker regions (Wilcoxon markers, log2FC ≥ 1.25; GSM8836088 and bulk replicates).
+**Panel S1 — Spearman correlation heatmap.** Spearman correlation among four bigWig tracks (cluster0, cluster1, GSM8836082, GSM8836084) at positive marker regions from Seurat `FindAllMarkers()` (Wilcoxon test, latent.vars="peak_region_fragments", only.pos=TRUE, logfc.threshold=1.25, p_val_adj<0.05). Signal extracted with `wigglescout::bw_loci()`, correlation computed with `cor(method="spearman")`, heatmap rendered with ComplexHeatmap `Heatmap()`. Output: `panel_S1.pdf`, `panel_S1_marker_regions.mm10.bed`.
 
-**Panel S2 — G4 vs ATAC signal scatter correlations.** Log2 RPGC scatter plots of single-cell G4 signal vs the matched ATAC-seq track (mESC/3T3) for each peak category (cluster-0-only, cluster-1-only, shared), with Pearson r values. Tools: `wigglescout::plot_bw_loci_scatter`.
+**Panel S2 — G4 vs ATAC scatter correlations.** Three peak categories (cluster0-only, cluster1-only, shared) from Panel F. For each category, log2 RPGC scatter plot comparing G4 signal (cluster0 or cluster1 bigWig) vs matched ATAC signal (GSM4661960 for cluster1/mESC, GSM6451000 for cluster0/MEF). Signal extracted with `wigglescout::bw_loci()`, scatter plotted with `wigglescout::plot_bw_loci_scatter()` (rasterized at 150 dpi with ggrastr). Pearson r computed per category. Tools: wigglescout, ggrastr. Outputs: `panel_S2_G4_ATAC_correlation.pdf`, `panel_S2_G4_ATAC_correlation_pearson.csv`.
 
-**Panel S3 — PQS-highlighted correlations.** The same G4-vs-ATAC scatters with loci overlapping a PQS site (minimum score 50) highlighted, plus an alternative rendering on merged peak sets (pseudobulk cluster peaks ∪ matching ATAC peaks).
+**Panel S3 — PQS-highlighted correlations.** Same as S2, but with loci overlapping PQS sites (score ≥50 from `PQS_scores.mm10.bed`) highlighted in red. Additional panel shows merged peak sets (pseudobulk cluster peaks ∪ matching ATAC peaks) with PQS overlap highlighted. Tools: wigglescout, GenomicRanges, ggrastr. Outputs: `panel_S3_G4_ATAC_correlation_PQS.pdf`, `panel_S3_alt_merged_peaks.pdf`.
 
-**Panel S4 — ggscatterhist.** Density scatterplots with marginal distributions (log2 axes) comparing cluster peaks vs matching ATAC peaks, and merged peaks colored by PQS overlap. Tool: `ggpubr::ggscatterhist`.
+**Panel S4 — Density scatterplots.** Eight ggscatterhist plots comparing cluster peaks vs matching ATAC peaks (log2 axes) with marginal density distributions. Merged peaks colored by PQS overlap (score ≥50). Tool: ggpubr `ggscatterhist()`. Output: `panel_S4_ggscatterhist.pdf`.

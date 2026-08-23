@@ -4,7 +4,16 @@
 This figure shows analysis of unsorted G4 CUT&Tag data projected onto neuronal reference.
 
 ## Prerequisites
-None - all inputs are from data/ directory.
+Before running `fig4.R`, you must generate scBridge integration outputs:
+
+```bash
+# scBridge integration (GPU required for de-novo embedding)
+# Outputs saved to results/scBridge/output/unsorted_cl1_Zeisel/
+# - Seurat_UMAPs-unsorted_cl1_int.pdf (Panel F)
+# - tree_plot-unsorted_cl1_predictions.pdf (Panel G)
+```
+
+**Note:** scBridge outputs are gitignored and must be regenerated locally. Panels F and G require these precomputed files.
 
 ## Inputs (from data/)
 - `../data/GSE291468/GSM8836087_unsorted_Seurat_object.Rds` - Unsorted G4 data
