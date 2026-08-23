@@ -1,0 +1,15 @@
+comparison,region,count
+mESC,cluster0,8833
+mESC,cluster1,6680
+mESC,mESC bulk,14407
+mESC,cluster0&cluster1,8510
+mESC,cluster0&mESC bulk,1305
+mESC,cluster1&mESC bulk,6591
+mESC,cluster0&cluster1&mESC bulk,12371
+MEF,cluster0,6730
+MEF,cluster1,12069
+MEF,MEF bulk,1200
+MEF,cluster0&cluster1,3834
+MEF,cluster0&MEF bulk,3408
+MEF,cluster1&MEF bulk,1202
+MEF,cluster0&cluster1&MEF bulk,17047
