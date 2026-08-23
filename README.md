@@ -1,8 +1,8 @@
-# scG4 Mouse Brain Analysis
+# G-quadruplex Profiling in Complex Tissues Using Single-cell CUT&Tag
 
-**Genome Biology** - Lyu et al. (2025)
+Lyu et al. (2025)
 
-This repository contains all code and data to reproduce Figures 1-4 from our study on G-quadruplex (scG4) patterns in mouse brain.
+This repository contains the complete analysis pipeline and data for our study on G-quadruplex (scG4) patterns in mouse brain using single-cell CUT&Tag. All main scripts, processed Seurat objects, and data to reproduce Figures 1-4 and Supplementary Figures are included.
 
 ---
 
@@ -66,21 +66,15 @@ github/
 
 ---
 
-## Figure Reproduction
+## Analysis Pipeline
 
-Each figure lives in its own directory (`fig1/`–`fig4/`) containing the plotting script and, where needed, preprocessing scripts.
+### Main Steps
 
-### Directory Layout
-
-```
-fig{N}/
-  fig{N}.R                 # Panel plotting script (outputs to fig{N}/outputs/)
-  preprocessing.R          # Optional: required preprocessing
-  outputs/                 # Generated figure panels (PDF)
-    panel_A_*.pdf          # Named panels matching manuscript
-    panel_extra_*.pdf      # Supplementary/alternative panels
-  README.md                # Regeneration instructions
-```
+1. **Seurat processing** of G4 scCUT&Tag data from CellRanger outputs
+2. **Exploratory analysis** and performance validation
+3. **Integration with scRNA-Seq** data (Bartosovic et al., GSE163484)
+4. **Differential G4 analysis** for cell-type-specific patterns
+5. **Cicero coaccessibility** analysis for regulatory element prediction
 
 ### Main Figures
 
@@ -91,9 +85,9 @@ fig{N}/
 | Fig. 3 | `fig3/fig3.R` | `fig3/cicero.R`, `fig3/scbridge_input.R` | scBridge UMAP, Cicero tracks |
 | Fig. 4 | `fig4/fig4.R` | `fig4/map_unsorted.R`, `fig4/processing_neuron_data.R` | Unsorted brain mapping |
 
-### Revision Figures
+### Additional Figures
 
-All 17 revision scripts are in `rev/` and output to `rev/outputs/`. See `rev/paths.R` for path setup and `rev/Revision_figures_legend.md` for descriptions.
+Further scripts are in `rev/` and output to `rev/outputs/`. See `rev/paths.R` for path setup and `rev/Revision_figures_legend.md` for descriptions.
 
 ---
 
@@ -179,14 +173,20 @@ Rscript fig2.R                # ~10-20 minutes
 
 See `fig2/README.md` for details.
 
-### Figure 3: scBridge Files
+### Figure 3: scBridge Integration
 
-The scBridge integration outputs in `fig3/results/scBridge/` are shipped with the repository because:
+scBridge is a neural network-based single-cell multi-omics integration tool that leverages data heterogeneity ([Yunfan Li et al., 2023](https://www.nature.com/articles/s41467-023-41795-5)).
+
+**Installation:** [scBridge GitHub](https://github.com/XLearning-SCU/scBridge)
+
+**Note:** scBridge requires a single GPU for training.
+
+The scBridge outputs in `fig3/results/scBridge/` are shipped with the repository because:
 - scBridge requires GPU for training
 - Files are small (~840KB total)
 - Regeneration takes ~1 hour with GPU
 
-See `fig3/results/scBridge/README.md` for regeneration instructions if needed.
+See `fig3/results/scBridge/README.md` for regeneration instructions.
 
 ### Figure 3: Cicero Analysis
 
@@ -211,10 +211,10 @@ See `ALL_FIGURE_LEGENDS.md` for a combined view of all figure legends.
 
 ---
 
-## External Reference
+## Preprint
 
-Figure descriptions cross-checked against bioRxiv v1:
-<https://www.biorxiv.org/content/10.1101/2025.04.03.647101v1>
+This manuscript is available as a preprint on bioRxiv:
+<https://www.biorxiv.org/content/10.1101/2025.04.03.647101>
 
 ---
 
@@ -226,7 +226,7 @@ All primary data is available at GEO: **GSE291468**
 
 ## Citation
 
-Lyu, T., et al. (2025). "Single-cell G-quadruplex CUT&Tag reveals astrocyte-specific epigenetic regulation in mouse brain." *Genome Biology*.
+Lyu, T., et al. (2025). "Single-cell G-quadruplex CUT&Tag reveals astrocyte-specific epigenetic regulation in mouse brain." *bioRxiv*. https://doi.org/10.1101/2025.04.03.647101
 
 ---
 
@@ -321,5 +321,3 @@ scBridge requires GPU and is precomputed. Use the CSV outputs from `fig3/results
 
 ### Path errors
 Scripts use relative paths from repo root. Check this README for expected file locations.
-
----
