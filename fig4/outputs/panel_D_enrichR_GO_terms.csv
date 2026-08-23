@@ -1,0 +1,25 @@
+Term,P.value,type
+sympathetic nervous system development (go:0048485),0.00215921413585122,unique_cl0_terms
+autonomic nervous system development (go:0048483),0.00246022260643176,unique_cl0_terms
+generation of neurons (go:0048699),0.0085204168285522,unique_cl0_terms
+nervous system development (go:0007399),0.0156227026053633,unique_cl0_terms
+positive regulation of neuron differentiation (go:0045666),0.0163233447337657,unique_cl0_terms
+negative regulation of glial cell proliferation (go:0060253),0.0230368977064391,unique_cl0_terms
+neuron migration (go:0001764),0.0270804584645388,unique_cl0_terms
+neuron projection extension involved in neuron projection guidance (go:1902284),0.0275808955614597,unique_cl0_terms
+axon extension involved in axon guidance (go:0048846),0.0275808955614597,unique_cl0_terms
+noradrenergic neuron differentiation (go:0003357),0.0275808955614597,unique_cl0_terms
+regulation of oxidative stress-induced neuron intrinsic apoptotic signaling pathway (go:1903376),0.0275808955614597,unique_cl0_terms
+positive regulation of oligodendrocyte differentiation (go:0048714),0.0321039863714837,unique_cl0_terms
+regulation of glial cell proliferation (go:0060251),0.0366062649569838,unique_cl0_terms
+negative regulation of oxidative stress-induced neuron death (go:1903204),0.0366062649569838,unique_cl0_terms
+motor neuron axon guidance (go:0008045),0.0410878258058747,unique_cl0_terms
+central nervous system development (go:0007417),0.0430841809428591,unique_cl0_terms
+negative regulation of neuron apoptotic process (go:0043524),0.0465513421575251,unique_cl0_terms
+regulation of neuron projection development (go:0010975),0.0475755730197715,unique_cl0_terms
+primary neural tube formation (go:0014020),0.00642430478069536,unique_cl1_terms
+neural tube closure (go:0001843),0.00833657434393995,unique_cl1_terms
+synaptic signaling (go:0099536),0.025527220063161,unique_cl1_terms
+anterograde axonal protein transport (go:0099641),0.0297186959454334,unique_cl1_terms
+synaptic vesicle transport (go:0048489),0.0421865092184754,unique_cl1_terms
+neuron projection development (go:0031175),0.0499482855598189,unique_cl1_terms
