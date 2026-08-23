@@ -16,6 +16,28 @@ This creates integration outputs that fig3 depends on.
 
 **Note:** scBridge CSV files are shipped with this directory (GPU required to regenerate).
 
+### 2. Regenerate Smooth BigWig Files (Required for Figure 3C)
+
+For Figure 3C, you need to generate smoothed bigWig files (150bp moving average):
+
+```bash
+cd ../../data/GSE291468
+bash regenerate_bigwigs.sh
+# Takes ~2-4 hours total (2 files)
+cd ../..
+```
+
+This generates:
+- `GSM8836086_Predicted_Astrocytes_RPGC.smooth150.bw`
+- `GSM8836086_Predicted_non-Astrocytes_RPGC.smooth150.bw`
+
+**Requirements:**
+- Compute cluster with SLURM (or run manually with deepTools)
+- `bedtools`, `samtools`, and `deepTools` installed
+- ~2 hours per file
+
+**Note:** The unsmoothed corrected bigWigs are already included in the repository.
+
 ## Inputs
 - From `../fig2/results/integration/outputs/`:
   - `scRNA_Seq_Seurat_object.Rds`
