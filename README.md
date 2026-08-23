@@ -321,3 +321,27 @@ scBridge requires GPU and is precomputed. Use the CSV outputs from `fig3/results
 
 ### Path errors
 Scripts use relative paths from repo root. Check this README for expected file locations.
+
+---
+
+## Figure 3C: Regenerating Smooth BigWig Files
+
+For Figure 3C, you need to generate smoothed bigWig files (150bp moving average):
+
+```bash
+cd data/GSE291468
+bash regenerate_bigwigs.sh
+# Takes ~2-4 hours total (2 files)
+cd ../..
+```
+
+This generates:
+- `GSM8836086_Predicted_Astrocytes_RPGC.smooth150.bw`
+- `GSM8836086_Predicted_non-Astrocytes_RPGC.smooth150.bw`
+
+**Requirements:**
+- Compute cluster with SLURM (or run manually with deepTools)
+- `bedtools`, `samtools`, and `deepTools` installed
+- ~2 hours per file
+
+**Note:** The unsmoothed corrected bigWigs are already included in the repository.
