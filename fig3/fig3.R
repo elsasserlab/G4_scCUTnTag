@@ -30,15 +30,18 @@ suppressPackageStartupMessages({
   library(stringr)
   library(EnsDb.Mmusculus.v79)
   library(GenomicRanges)
+  library(rtracklayer)
 })
 
-ROOT    <- normalizePath(getwd())
-RESULTS <- file.path(ROOT, "results")
-OUT     <- file.path(ROOT, "fig3", "outputs")
+script_arg <- grep("^--file=", commandArgs(FALSE), value = TRUE)
+SCRIPT_DIR <- dirname(normalizePath(sub("^--file=", "", script_arg[1])))
+ROOT       <- dirname(SCRIPT_DIR)
+RESULTS    <- file.path(SCRIPT_DIR, "results")
+OUT        <- file.path(SCRIPT_DIR, "outputs")
 dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
 
-SC_DIR   <- "results/scBridge"
-INT_DIR  <- file.path("../fig2/results/integration/outputs")
+SC_DIR  <- file.path(RESULTS, "scBridge")
+INT_DIR <- file.path(ROOT, "fig2", "results", "integration", "outputs")
 
 save_fig <- function(p, name, width = 10, height = 8) {
   ggsave(file.path(OUT, paste0(name, ".pdf")), p, width = width, height = height, device = "pdf")
@@ -77,29 +80,35 @@ UMAP_THEME <- theme(
 # ===========================================================================
 # Load shared data
 # ===========================================================================
-cat("== Loading data ==\n")
+if (any(vapply(LETTERS[1:4], run_panel, logical(1)))) {
+  cat("== Loading data ==\n")
 
-cat("  Coembedded UMAP...\n")
-umap_df <- fread(file.path(SC_DIR, "umap_coembedded.csv"))
-umap_df[, modality := ifelse(Domain == "Bartosovic_scRNA-Seq", "scRNA-Seq", "G4 scCUT&Tag")]
+  cat("  Coembedded UMAP...\n")
+  umap_df <- fread(file.path(SC_DIR, "umap_coembedded.csv"))
+  umap_df[, modality := ifelse(
+    Domain == "Bartosovic_scRNA-Seq", "scRNA-Seq", "G4 scCUT&Tag"
+  )]
 
-cat("  scBridge predictions + reliability...\n")
-pred <- fread(file.path(SC_DIR, "scbridge_predictions.csv"), header = TRUE)
-rel  <- fread(file.path(SC_DIR, "scbridge_reliability.csv"), header = TRUE)
-setnames(pred, "V1", "barcode")
-setnames(rel, "V1", "barcode")
-pred <- merge(pred, rel, by = "barcode")
-pred[, Prediction_clean := fifelse(
-  str_detect(Prediction, "Novel"), "unreliable", str_replace_all(Prediction, "Astrocytes", "AST"))
-]
-pred[, Prediction_clean := str_replace_all(Prediction_clean, "Oligodendrocytes", "MOL")]
+  cat("  scBridge predictions + reliability...\n")
+  pred <- fread(file.path(SC_DIR, "scbridge_predictions.csv"), header = TRUE)
+  rel  <- fread(file.path(SC_DIR, "scbridge_reliability.csv"), header = TRUE)
+  setnames(pred, "V1", "barcode")
+  setnames(rel, "V1", "barcode")
+  pred <- merge(pred, rel, by = "barcode")
+  pred[, Prediction_clean := fifelse(
+    str_detect(Prediction, "Novel"),
+    "unreliable",
+    str_replace_all(Prediction, "Astrocytes", "AST")
+  )]
+  pred[, Prediction_clean := str_replace_all(Prediction_clean, "Oligodendrocytes", "MOL")]
 
-cat("  Seurat objects...\n")
-rna <- readRDS(file.path(INT_DIR, "scRNA_Seq_Seurat_object.Rds"))
-rna@meta.data$cell_type <- str_replace_all(rna@meta.data$cell_type, "Astrocytes", "AST")
-rna@meta.data$cell_type <- str_replace_all(rna@meta.data$cell_type, "Oligodendrocytes", "MOL")
+  cat("  Seurat objects...\n")
+  rna <- readRDS(file.path(INT_DIR, "scRNA_Seq_Seurat_object.Rds"))
+  rna@meta.data$cell_type <- str_replace_all(rna@meta.data$cell_type, "Astrocytes", "AST")
+  rna@meta.data$cell_type <- str_replace_all(rna@meta.data$cell_type, "Oligodendrocytes", "MOL")
 
-g4 <- readRDS(file.path(INT_DIR, "G4_scRNA_integration.Rds"))
+  g4 <- readRDS(file.path(INT_DIR, "G4_scRNA_integration.Rds"))
+}
 
 # ===========================================================================
 # Panel A: Coembedded UMAPs
@@ -608,13 +617,71 @@ if (run_panel("D")) {
 # ===========================================================================
 if (run_panel("E")) {
   cat("== Panel E: Cicero browser tracks ==\n")
-  cicero_pdf <- file.path(RESULTS, "cicero", "cicero_browser_example-AST_spec.pdf")
-  if (file.exists(cicero_pdf)) {
-    file.copy(cicero_pdf, file.path(OUT, "panel_E_cicero_tracks.pdf"), overwrite = TRUE)
-    cat("  Copied cicero_browser_example-AST_spec.pdf\n")
-  } else {
-    message("  Cicero browser output not found: ", cicero_pdf)
+  source(file.path(SCRIPT_DIR, "cog4_browser.R"))
+
+  cicero_dir <- file.path(RESULTS, "cicero")
+  ast_conns <- load_saved_r_object(
+    file.path(cicero_dir, "cicero_GFPsorted-predAST.Rds"), "conns"
+  )
+  nonast_conns <- load_saved_r_object(
+    file.path(cicero_dir, "cicero_GFPsorted-pred_nonAST.Rds"), "conns"
+  )
+
+  ast_bw <- file.path(
+    ROOT, "data", "GSE291468", "GSM8836086_Predicted_Astrocytes_RPGC.bw"
+  )
+  nonast_bw <- file.path(
+    ROOT, "data", "GSE291468", "GSM8836086_Predicted_non-Astrocytes_RPGC.bw"
+  )
+  pqs_bw <- file.path(ROOT, "data", "pqsfinder", "PQS_scores.mm10.bw")
+  ccre_bed <- file.path(
+    ROOT, "data", "cCRE", "Li_et_al-mousebrain_cCRE_with_K27ac.bed"
+  )
+  panel_e_inputs <- c(ast_bw, nonast_bw, pqs_bw, ccre_bed)
+  if (any(!file.exists(panel_e_inputs))) {
+    stop("Missing Panel E input(s): ", paste(panel_e_inputs[!file.exists(panel_e_inputs)], collapse = ", "))
   }
+
+  ccre <- fread(ccre_bed, header = FALSE, select = 1:4)
+  setnames(ccre, c("chr", "start", "end", "k27ac"))
+  peaks <- cicero_peak_universe(ast_conns, nonast_conns)
+  gene_gr <- GenomicFeatures::genes(EnsDb.Mmusculus.v79)
+  gene_chr <- as.character(seqnames(gene_gr))
+  gene_chr <- ifelse(startsWith(gene_chr, "chr"), gene_chr, paste0("chr", gene_chr))
+  genes <- data.table(
+    chr = gene_chr,
+    start = start(gene_gr),
+    end = end(gene_gr),
+    strand = as.character(strand(gene_gr)),
+    gene = gene_gr$gene_name
+  )[!is.na(gene) & gene != ""]
+
+  panel_e_loci <- c(
+    Rsg1 = "chr4-141212918-141213521",
+    Tmem74 = "chr15-43869537-43870384",
+    Amot = "chrX-145505676-145506438",
+    Sox10 = "chr15-79140838-79141742",
+    Akt1s1 = "chr7-44848458-44849363"
+  )
+  panel_e_kinds <- c(
+    rep("AST-up G4", 3),
+    "oligodendrocyte-lineage constitutive G4",
+    "balanced constitutive multi-link G4"
+  )
+  p_E <- make_cog4_browser_panel(
+    loci = panel_e_loci,
+    panel_kinds = panel_e_kinds,
+    ast_conns = ast_conns,
+    nonast_conns = nonast_conns,
+    peaks = peaks,
+    genes = genes,
+    ccre = ccre,
+    ast_bigwig = ast_bw,
+    nonast_bigwig = nonast_bw,
+    pqs_bigwig = pqs_bw
+  )
+  save_fig(p_E, "panel_E_cicero_tracks", width = 10, height = 27.5)
+  cat("  Saved panel_E_cicero_tracks.pdf\n")
 }
 
 cat("\nAll Figure 3 outputs written to", OUT, "/\n")
