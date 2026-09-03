@@ -126,7 +126,7 @@ Our scG4 CUT&Tag data from three experiments:
 | **Fig. 1** | GSM8836088 (mESC-MEF)<br>GSM8836082/84 (bulk controls) | `GSM8836088_mESCMEF_Seurat_object.Rds`<br>`GSM8836088_cluster_{0,1}_peaks.narrowPeak`<br>`GSM8836082/84_bulkG4CnT_*.bw` | mESC-MEF UMAP/QC, cluster-vs-bulk overlaps, marker PCA, RPGC heatmaps, correlation, browser tracks |
 | **Fig. 2** | GSM8836086 (sorted GFP+)<br>GSE163484 (scRNA reference) | `GSM8836086_GFPpos_Seurat_object.Rds`<br>`scRNA_Seq-mouse_brain.Rds`<br>`results/integration/outputs/` | CCA co-embedding, transferred cell labels, prediction scores, overlap scores, marker violins, RNA/G4 feature plots |
 | **Fig. 3** | GSM8836086 (sorted GFP+)<br>GSE163484 (scRNA reference) | `results/scBridge/umap_coembedded.csv`<br>`scbridge_predictions.csv`<br>`GSM8836086_Predicted_Astrocytes_RPGC.bw` | scBridge embedding, AST differential G4, AST coverage, RNA feature plots, reliability analyses |
-| **Fig. 3E** | Derived from sorted GFP+ | `results/cicero/cicero_browser_example-AST_spec.pdf`<br>`data/cCRE/` | Cicero co-accessibility and candidate regulatory-element browser tracks |
+| **Fig. 3E** | Derived from sorted GFP+ | `fig3/results/cicero/cicero_GFPsorted-{predAST,pred_nonAST}.Rds`<br>`GSM8836086_Predicted_{Astrocytes,non-Astrocytes}_RPGC.bw`<br>`PQS_scores.mm10.bw`<br>`data/cCRE/` | Directly generated Cicero co-accessibility browser tracks for five G4 loci |
 | **Fig. 4** | GSM8836087 (unsorted)<br>GSM8836086 (sorted reference) | `GSM8836087_unsorted_Seurat_object.Rds`<br>`GSM8836087_unsorted_cluster_{0,1}_peaks.narrowPeak` | Query-to-reference mapping, mapped labels, prediction scores, peak-overlap Venn |
 | **Fig. 4C** | GSM8836087 (unsorted clusters) | `GSM8836087_cluster{0,1}_RPGC.bw`<br>`GSM8836086_GFP_sorted_mousebrain.rpgc.bw`<br>`PQS_scores.mm10.bw` | RPGC signal profiles/heatmaps for cluster-specific peaks, PQS score profiles |
 | **Fig. 4D** | GSM8836087 (unsorted) | `GSM8836087_unsorted_cluster_{0,1}_peaks.narrowPeak` | Nearest-gene annotation and enrichR GO Biological Process analysis |
@@ -193,6 +193,7 @@ See `fig3/results/scBridge/README.md` for regeneration instructions.
 The Cicero coaccessibility outputs in `fig3/results/cicero/` are shipped because:
 - Computation takes 1-2 hours
 - Files are ~14MB total
+- `fig3/fig3.R --only=E` uses the shipped connection tables directly
 
 See `fig3/README.md` for details.
 
@@ -318,4 +319,3 @@ scBridge requires GPU and is precomputed. Use the CSV outputs from `fig3/results
 - `umap_coembedded.csv`
 - `scbridge_predictions.csv`
 - `scbridge_reliability.csv`
-
