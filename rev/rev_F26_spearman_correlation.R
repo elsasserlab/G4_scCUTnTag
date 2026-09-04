@@ -83,6 +83,52 @@ all_diff_gr <- load_diff_peaks(
   F24_CATEGORIES_ALL, EXPECTED_ALL_DIFF_N, "all differential"
 )
 
+# Cross-tabulate signal-defined differential classes against called-peak
+# membership retained by F24 when the cluster peak sets were combined.
+all_diff_table <- fread(F24_CATEGORIES_ALL)[diff %chin% c("MEF", "ESC")]
+if (!"source" %in% names(all_diff_table)) {
+  stop("F24 all-peak table is missing the source column")
+}
+all_diff_table <- unique(all_diff_table, by = c("seqnames", "start", "end"))
+all_diff_table[, peak_category := fcase(
+  source == "cl0", "cluster0_only",
+  source == "cl1", "cluster1_only",
+  source == "cl0,cl1", "shared",
+  default = NA_character_
+)]
+if (anyNA(all_diff_table$peak_category)) {
+  stop("Unexpected F24 source label(s): ",
+       paste(unique(all_diff_table[is.na(peak_category), source]), collapse = ", "))
+}
+
+category_cross_table <- dcast(
+  all_diff_table[, .N, by = .(diff, peak_category)],
+  diff ~ peak_category,
+  value.var = "N",
+  fill = 0
+)
+setcolorder(
+  category_cross_table,
+  c("diff", "cluster0_only", "cluster1_only", "shared")
+)
+category_cross_table <- category_cross_table[match(c("MEF", "ESC"), diff)]
+category_cross_table[, total := rowSums(.SD),
+                     .SDcols = c("cluster0_only", "cluster1_only", "shared")]
+category_cross_table <- rbind(
+  category_cross_table,
+  data.table(
+    diff = "total",
+    cluster0_only = sum(category_cross_table$cluster0_only),
+    cluster1_only = sum(category_cross_table$cluster1_only),
+    shared = sum(category_cross_table$shared),
+    total = sum(category_cross_table$total)
+  )
+)
+fwrite(
+  category_cross_table,
+  file.path(OUT_DIR, "F26_diff_by_peak_call_category_counts.csv")
+)
+
 # Confirm that regeneration still recovers the surviving canonical BED.
 if (file.exists(LEGACY_BED)) {
   previous_gr <- sort(rtracklayer::import(LEGACY_BED))
@@ -104,6 +150,8 @@ cat(sprintf(
   length(all_diff_gr), sum(all_diff_gr$diff == "MEF"),
   sum(all_diff_gr$diff == "ESC")
 ))
+cat("\nDifferential class by called-peak category:\n")
+print(category_cross_table)
 
 score_tracks <- function(regions, label) {
   cat("Scoring ", label, " with bw_loci...\n", sep = "")
