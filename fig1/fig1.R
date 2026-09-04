@@ -257,91 +257,135 @@ both <- GenomicRanges::reduce(sort(c(gr0[shared0], gr1[shared1])))
 cat("Cluster-specific peak sets: cl0_only =", length(cl0_only),
     ", cl1_only =", length(cl1_only), ", shared (both) =", length(both), "\n")
 
+# --- PQS overlap bar plot (Panel C, MEF/ESC scG4 clusters) ---
+if ("C" %in% run_panels) {
+  cat("\n  Computing PQS overlap for MEF/ESC clusters (Panel C)...\n")
+  pqs_gr <- rtracklayer::import(file.path(DATA, "pqsfinder/PQS_scores.mm10.bed"))
+  pqs_gr <- pqs_gr[as.character(seqnames(pqs_gr)) %in% c(paste0("chr", 1:19), "chrX", "chrY")]
+  
+  compute_pqs_overlap <- function(peaks_gr, pqs_gr, label) {
+    n_peaks <- length(peaks_gr)
+    n_overlap <- sum(IRanges::overlapsAny(peaks_gr, pqs_gr, ignore.strand = TRUE))
+    pct <- 100 * n_overlap / n_peaks
+    list(label = label, n_peaks = n_peaks, n_overlap = n_overlap, pct = pct)
+  }
+  
+  oc0 <- compute_pqs_overlap(cl0_only, pqs_gr, "MEF (cluster 0)")
+  oc1 <- compute_pqs_overlap(cl1_only, pqs_gr, "mESC (cluster 1)")
+  
+  bar_mesc_mef <- data.frame(
+    cluster = c("MEF (cluster 0)", "mESC (cluster 1)"),
+    pct     = c(oc0$pct, oc1$pct),
+    overlap = c(oc0$n_overlap, oc1$n_overlap),
+    n_peaks = c(oc0$n_peaks, oc1$n_peaks)
+  )
+  bar_mesc_mef$label <- sprintf("%.1f%%\n(%s / %s)",
+                                bar_mesc_mef$pct,
+                                format(bar_mesc_mef$overlap, big.mark = ","),
+                                format(bar_mesc_mef$n_peaks, big.mark = ","))
+  
+  p_pqs <- ggplot(bar_mesc_mef, aes(x = cluster, y = pct)) +
+    geom_col(width = 0.6, fill = "#9ecae1", color = "grey30") +
+    geom_text(aes(label = label), vjust = -0.3, size = 3.5, fontface = "bold") +
+    scale_y_continuous(limits = c(0, 105),
+                       breaks = seq(0, 100, 25),
+                       labels = function(x) paste0(x, "%")) +
+    labs(x = NULL,
+         y = "% of scG4 peaks overlapping >=1 PQS site",
+         title = "MEF/ESC scG4 clusters overlap with PQS") +
+    theme_bw(base_size = 12) +
+    theme(plot.title    = element_text(face = "bold", size = 13),
+          panel.grid.minor = element_blank(),
+          panel.grid.major.x = element_blank())
+  
+  ggsave(file.path(OUT, "panel_C_bar_pct_peaks_overlap_PQS_MEF_ESC_scG4.pdf"), p_pqs,
+         width = 6, height = 6)
+  cat("  Saved panel_C_bar_pct_peaks_overlap_PQS_MEF_ESC_scG4.pdf\n")
+}
+
 # ===========================================================================
-# Panel E: PCA of 6 samples (2 clusters + 4 bulk)
+# Panel E: |log2FC| > 2 filtered correlation heatmap (Spearman + Pearson)
 # ===========================================================================
 if ("E" %in% run_panels) {
-  cat("== Panel E: PCA ==\n")
-  marker_gr <- c(cl0_only, cl1_only)
-  cat("  Using", length(marker_gr), "cluster-specific peaks (cl0_only + cl1_only)\n")
-  rtracklayer::export.bed(marker_gr, file.path(OUT, "panel_E_marker_regions.mm10.bed"))
-  cat("  Saved panel_E_marker_regions.mm10.bed\n")
-
-  # --- (a) Binary overlap PCA (diagnostic) ---
-  mesc_r1 <- file.path(BULK_PEAKS_DIR, "GSM8836082_bulkG4CnT_mESC_rep1.broadPeak")
-  mesc_r2 <- file.path(BULK_PEAKS_DIR, "GSM8836083_bulkG4CnT_mESC_rep2.broadPeak")
-  mef_r1  <- file.path(BULK_PEAKS_DIR, "GSM8836084_bulkG4CnT_3T3_rep1.broadPeak")
-  mef_r2  <- file.path(BULK_PEAKS_DIR, "GSM8836085_bulkG4CnT_3T3_rep2.broadPeak")
-  stopifnot(all(file.exists(c(cluster0_file, cluster1_file, mesc_r1, mesc_r2, mef_r1, mef_r2))))
-  sample_grs <- list(
-    "cluster0"       = cl0, "cluster1"      = cl1,
-    "mESC bulk rep1" = rtracklayer::import(mesc_r1), "mESC bulk rep2" = rtracklayer::import(mesc_r2),
-    "MEF bulk rep1"  = rtracklayer::import(mef_r1),  "MEF bulk rep2"  = rtracklayer::import(mef_r2)
+  cat("== Panel E: |lfc|>2 correlation heatmap ==\n")
+  
+  # Use all peaks (cl0_only + cl1_only + both) since |lfc|>2 ensures specificity
+  marker_gr_all <- c(cl0_only, cl1_only, both)
+  cat("  Using", length(marker_gr_all), "peaks (cl0_only + cl1_only + shared)\n")
+  
+  bw_4 <- c(
+    cl0  = file.path(DATA, "GSE291468/GSM8836088_cluster0_RPGC.bw"),
+    cl1  = file.path(DATA, "GSE291468/GSM8836088_cluster1_RPGC.bw"),
+    mESC = file.path(DATA, "GSE291468/GSM8836082_bulkG4CnT_mESC_rep1.bw"),
+    MEF  = file.path(DATA, "GSE291468/GSM8836084_bulkG4CnT_3T3_rep1.bw")
   )
-  peak_mat <- t(sapply(sample_grs, function(gr) as.integer(countOverlaps(marker_gr, gr) > 0)))
-  col_var <- apply(peak_mat, 2, var)
-  peak_mat <- peak_mat[, col_var > 0]
-  pca_res <- prcomp(peak_mat, scale. = TRUE, center = TRUE)
-  var_exp <- round(summary(pca_res)$importance[2, 1:2] * 100, 1)
-  pca_df <- data.frame(
-    PC1 = pca_res$x[, 1], PC2 = pca_res$x[, 2],
-    sample = rownames(pca_res$x),
-    group = c("cluster", "cluster", "mESC", "mESC", "MEF", "MEF")
-  )
-  sample_colors <- c(
-    "cluster0" = "#9ecae1", "mESC bulk rep1" = "#d62728", "mESC bulk rep2" = "#d62728",
-    "cluster1" = "#fc9272", "MEF bulk rep1" = "#1f77b4", "MEF bulk rep2" = "#1f77b4"
-  )
-  p_E <- ggplot(pca_df, aes(x = PC1, y = PC2, color = sample)) +
-    geom_point(size = 6) +
-    scale_color_manual(values = sample_colors) +
-    labs(title = "PCA of peak profiles (binary)",
-         x = glue("PC1 ({var_exp[1]}%)"), y = glue("PC2 ({var_exp[2]}%)")) +
-    theme_fig1 + geom_text(aes(label = sample), vjust = -1, size = 3) +
-    NoLegend()
-   ggsave(file.path(OUT, "panel_E_binary.pdf"), p_E, width = 8, height = 6, dpi = 300)
-  cat("  Saved panel_E_binary.pdf\n")
-
-  # --- (b) Signal-based PCA (RPGC bigwigs x marker regions) ---
-  bw_6 <- c(
-    "cluster0 (MEF)" = file.path(DATA, "GSE291468/GSM8836088_cluster0_RPGC.bw"),
-    "cluster1 (mESC)" = file.path(DATA, "GSE291468/GSM8836088_cluster1_RPGC.bw"),
-    "mESC rep1"       = file.path(DATA, "GSE291468/GSM8836082_bulkG4CnT_mESC_rep1.bw"),
-    "mESC rep2"       = file.path(DATA, "GSE291468/GSM8836083_bulkG4CnT_mESC_rep2.bw"),
-    "MEF rep1"        = file.path(DATA, "GSE291468/GSM8836084_bulkG4CnT_3T3_rep1.bw"),
-    "MEF rep2"        = file.path(DATA, "GSE291468/GSM8836085_bulkG4CnT_3T3_rep2.bw")
-  )
-  missing_bw <- bw_6[!file.exists(unlist(bw_6))]
+  missing_bw <- bw_4[!file.exists(unlist(bw_4))]
   if (length(missing_bw) > 0) {
-    cat("    Skipping signal PCA: missing bigwigs:", paste(names(missing_bw), collapse = ", "), "\n")
+    cat("    Skipping: missing bigwigs:", paste(names(missing_bw), collapse = ", "), "\n")
   } else {
-     sig <- bw_loci(unlist(bw_6), marker_gr, labels = names(bw_6), default_na = 0)
-     sig_mat <- as.matrix(mcols(sig))
-     if ("name" %in% colnames(sig_mat)) sig_mat <- sig_mat[, setdiff(colnames(sig_mat), "name"), drop = FALSE]
-    row_var <- apply(sig_mat, 1, var)
-    sig_mat <- sig_mat[row_var > 0, ]
-     pca_sig <- prcomp(t(sig_mat), scale. = TRUE, center = TRUE)
-    var_sig <- round(summary(pca_sig)$importance[2, 1:2] * 100, 1)
-    pca_sig_df <- data.frame(
-      PC1 = pca_sig$x[, 1], PC2 = pca_sig$x[, 2],
-       sample = rownames(pca_sig$x),
-      group = c("cluster", "cluster", "mESC", "mESC", "MEF", "MEF")
-    )
-    sample_colors_sig <- c(
-      "cluster0 (MEF)" = "#9ecae1", "mESC rep1" = "#d62728", "mESC rep2" = "#d62728",
-      "cluster1 (mESC)" = "#fc9272", "MEF rep1" = "#1f77b4", "MEF rep2" = "#1f77b4"
-    )
-    p_E_sig <- ggplot(pca_sig_df, aes(x = PC1, y = PC2, color = sample)) +
-      geom_point(size = 6) +
-      scale_color_manual(values = sample_colors_sig) +
-      labs(title = "PCA of signal profiles",
-           x = glue("PC1 ({var_sig[1]}%)"), y = glue("PC2 ({var_sig[2]}%)")) +
-      theme_fig1 + geom_text(aes(label = sample), vjust = -1, size = 3) +
-      NoLegend()
-     # The manuscript panel is based on normalized signal, not binary peak
-     # membership. Keep the binary version as a diagnostic alternative.
-     ggsave(file.path(OUT, "panel_E_pca.pdf"), p_E_sig, width = 8, height = 6, dpi = 300)
-     cat("  Saved panel_E_pca.pdf\n")
+    sig_all <- bw_loci(unlist(bw_4), marker_gr_all, labels = names(bw_4), default_na = 0)
+    sig_mat_all <- as.matrix(mcols(sig_all))
+    
+    # Filter by |log2FC| > 2
+    cl0_signal_all <- sig_mat_all[, "cl0"]
+    cl1_signal_all <- sig_mat_all[, "cl1"]
+    lfc_all <- log2((cl1_signal_all + 0.01) / (cl0_signal_all + 0.01))
+    lfc2_mask_all <- abs(lfc_all) > 2
+    cat("    Peaks with |lfc| > 2:", sum(lfc2_mask_all), "of", nrow(sig_mat_all), "\n")
+    
+    if (sum(lfc2_mask_all) > 0) {
+      sig_mat_lfc2 <- sig_mat_all[lfc2_mask_all, , drop = FALSE]
+      
+      # Compute both Spearman and Pearson correlations
+      cor_spearman_lfc2 <- cor(sig_mat_lfc2, method = "spearman", use = "complete.obs")
+      cor_pearson_lfc2 <- cor(sig_mat_lfc2, method = "pearson", use = "complete.obs")
+      
+      order_G <- c("MEF", "cl0", "cl1", "mESC")
+      cor_spearman_lfc2 <- cor_spearman_lfc2[order_G, order_G, drop = FALSE]
+      cor_pearson_lfc2 <- cor_pearson_lfc2[order_G, order_G, drop = FALSE]
+      
+      display_names <- c("MEF bulk", "cluster0", "cluster1", "mESC bulk")
+      dimnames(cor_spearman_lfc2) <- list(display_names, display_names)
+      dimnames(cor_pearson_lfc2) <- list(display_names, display_names)
+      
+      col_fun_G <- colorRamp2(c(0.3, 1), c("white", "red2"))
+      
+      heatmap_spearman_lfc2 <- Heatmap(cor_spearman_lfc2, name = "Spearman rho", col = col_fun_G,
+                  column_title = "Spearman correlation", row_title = "",
+              rect_gp = gpar(col = "black", lwd = 1),
+              cell_fun = function(j, i, x, y, width, height, fill) {
+                grid.text(sprintf("%.2f", cor_spearman_lfc2[i, j]), x, y, gp = gpar(fontsize = 14))
+              },
+              cluster_rows = FALSE, cluster_columns = FALSE,
+              show_row_dend = FALSE, show_column_dend = FALSE,
+              heatmap_width = unit(6, "cm"), heatmap_height = unit(6, "cm"),
+              row_names_gp = gpar(fontsize = 12), column_names_gp = gpar(fontsize = 12))
+      
+      heatmap_pearson_lfc2 <- Heatmap(cor_pearson_lfc2, name = "Pearson r", col = col_fun_G,
+                  column_title = "Pearson correlation", row_title = "",
+              rect_gp = gpar(col = "black", lwd = 1),
+              cell_fun = function(j, i, x, y, width, height, fill) {
+                grid.text(sprintf("%.2f", cor_pearson_lfc2[i, j]), x, y, gp = gpar(fontsize = 14))
+              },
+              cluster_rows = FALSE, cluster_columns = FALSE,
+              show_row_dend = FALSE, show_column_dend = FALSE,
+              heatmap_width = unit(6, "cm"), heatmap_height = unit(6, "cm"),
+              row_names_gp = gpar(fontsize = 12), column_names_gp = gpar(fontsize = 12))
+      
+      pdf(file.path(OUT, "panel_E.pdf"), width = 15, height = 7.5)
+      draw(heatmap_spearman_lfc2 + heatmap_pearson_lfc2, ht_gap = unit(1, "cm"))
+      dev.off()
+      cat("  Saved panel_E.pdf (Spearman + Pearson, |lfc|>2)\n")
+      
+      # Export correlation matrices to CSV
+      fwrite(as.data.table(cor_spearman_lfc2, keep.rownames = "track"), 
+             file.path(OUT, "panel_E_spearman_correlation.csv"))
+      fwrite(as.data.table(cor_pearson_lfc2, keep.rownames = "track"),
+             file.path(OUT, "panel_E_pearson_correlation.csv"))
+      cat("  Saved panel_E_spearman_correlation.csv and panel_E_pearson_correlation.csv\n")
+    } else {
+      cat("    No peaks with |lfc| > 2, skipping Panel E\n")
+    }
   }
 }
 
@@ -835,16 +879,10 @@ if ("S4" %in% run_panels) {
 if ("S1" %in% run_panels) {
   cat("== Panel S1: Spearman heatmap ==\n")
 
-  # Main analysis: cluster-specific peaks only (no overlap)
   marker_gr <- c(cl0_only, cl1_only)
   cat("  Using", length(marker_gr), "cluster-specific peaks (cl0_only + cl1_only)\n")
   rtracklayer::export.bed(marker_gr, file.path(OUT, "panel_S1_marker_regions.mm10.bed"))
   cat("  Saved panel_S1_marker_regions.mm10.bed\n")
-
-  # For |lfc|>2 filtered analysis: include shared peaks since strong fold-change
-  # ensures specificity regardless of peak-calling overlap
-  marker_gr_all <- c(cl0_only, cl1_only, both)
-  cat("  For |lfc|>2 analysis: ", length(marker_gr_all), " peaks (including shared)\n", sep="")
 
   bw_4 <- c(
     cl0  = file.path(DATA, "GSE291468/GSM8836088_cluster0_RPGC.bw"),
@@ -852,14 +890,13 @@ if ("S1" %in% run_panels) {
     mESC = file.path(DATA, "GSE291468/GSM8836082_bulkG4CnT_mESC_rep1.bw"),
     MEF  = file.path(DATA, "GSE291468/GSM8836084_bulkG4CnT_3T3_rep1.bw")
   )
-missing_bw <- bw_4[!file.exists(unlist(bw_4))]
+  missing_bw <- bw_4[!file.exists(unlist(bw_4))]
   if (length(missing_bw) > 0) {
     cat("    Skipping correlation: missing bigwigs:", paste(names(missing_bw), collapse = ", "), "\n")
   } else {
     sig <- bw_loci(unlist(bw_4), marker_gr, labels = names(bw_4), default_na = 0)
     sig_mat <- as.matrix(mcols(sig))
 
-    # Compute both Spearman and Pearson correlations for all cluster-specific peaks
     cor_spearman <- cor(sig_mat, method = "spearman", use = "complete.obs")
     cor_pearson <- cor(sig_mat, method = "pearson", use = "complete.obs")
 
@@ -900,69 +937,11 @@ missing_bw <- bw_4[!file.exists(unlist(bw_4))]
     dev.off()
     cat("  Saved panel_S1.pdf (Spearman + Pearson)\n")
 
-    # Export correlation matrices to CSV
     fwrite(as.data.table(cor_spearman, keep.rownames = "track"),
            file.path(OUT, "panel_S1_spearman_correlation.csv"))
     fwrite(as.data.table(cor_pearson, keep.rownames = "track"),
            file.path(OUT, "panel_S1_pearson_correlation.csv"))
     cat("  Saved panel_S1_spearman_correlation.csv and panel_S1_pearson_correlation.csv\n")
-
-# --- |lfc| > 2 filtered analysis (includes shared peaks) ---
-    cat("\n  Computing |log2FC| > 2 filtered correlations (all peaks including shared)...\n")
-    sig_all <- bw_loci(unlist(bw_4), marker_gr_all, labels = names(bw_4), default_na = 0)
-    sig_mat_all <- as.matrix(mcols(sig_all))
-
-    cl0_signal_all <- sig_mat_all[, "cl0"]
-    cl1_signal_all <- sig_mat_all[, "cl1"]
-    lfc_all <- log2((cl1_signal_all + 0.01) / (cl0_signal_all + 0.01))
-    lfc2_mask_all <- abs(lfc_all) > 2
-    cat("    Peaks with |lfc| > 2:", sum(lfc2_mask_all), "of", nrow(sig_mat_all), "\n")
-
-    if (sum(lfc2_mask_all) > 0) {
-      sig_mat_lfc2 <- sig_mat_all[lfc2_mask_all, , drop = FALSE]
-      cor_spearman_lfc2 <- cor(sig_mat_lfc2, method = "spearman", use = "complete.obs")
-      cor_pearson_lfc2 <- cor(sig_mat_lfc2, method = "pearson", use = "complete.obs")
-
-      cor_spearman_lfc2 <- cor_spearman_lfc2[order_G, order_G, drop = FALSE]
-      cor_pearson_lfc2 <- cor_pearson_lfc2[order_G, order_G, drop = FALSE]
-      dimnames(cor_spearman_lfc2) <- list(display_names, display_names)
-      dimnames(cor_pearson_lfc2) <- list(display_names, display_names)
-
-      heatmap_spearman_lfc2 <- Heatmap(cor_spearman_lfc2, name = "Spearman rho", col = col_fun_G,
-                  column_title = sprintf("Spearman (|lfc|>2, all peaks, n=%d)", sum(lfc2_mask_all)), row_title = "",
-              rect_gp = gpar(col = "black", lwd = 1),
-              cell_fun = function(j, i, x, y, width, height, fill) {
-                grid.text(sprintf("%.2f", cor_spearman_lfc2[i, j]), x, y, gp = gpar(fontsize = 14))
-              },
-              cluster_rows = FALSE, cluster_columns = FALSE,
-              show_row_dend = FALSE, show_column_dend = FALSE,
-              heatmap_width = unit(6, "cm"), heatmap_height = unit(6, "cm"),
-              row_names_gp = gpar(fontsize = 12), column_names_gp = gpar(fontsize = 12))
-
-      heatmap_pearson_lfc2 <- Heatmap(cor_pearson_lfc2, name = "Pearson r", col = col_fun_G,
-                  column_title = sprintf("Pearson (|lfc|>2, all peaks, n=%d)", sum(lfc2_mask_all)), row_title = "",
-              rect_gp = gpar(col = "black", lwd = 1),
-              cell_fun = function(j, i, x, y, width, height, fill) {
-                grid.text(sprintf("%.2f", cor_pearson_lfc2[i, j]), x, y, gp = gpar(fontsize = 14))
-              },
-              cluster_rows = FALSE, cluster_columns = FALSE,
-              show_row_dend = FALSE, show_column_dend = FALSE,
-              heatmap_width = unit(6, "cm"), heatmap_height = unit(6, "cm"),
-              row_names_gp = gpar(fontsize = 12), column_names_gp = gpar(fontsize = 12))
-
-      pdf(file.path(OUT, "panel_S1_lfc2.pdf"), width = 15, height = 7.5)
-      draw(heatmap_spearman_lfc2 + heatmap_pearson_lfc2, ht_gap = unit(1, "cm"))
-      dev.off()
-      cat("  Saved panel_S1_lfc2.pdf (Spearman + Pearson, |lfc|>2)\n")
-
-      fwrite(as.data.table(cor_spearman_lfc2, keep.rownames = "track"),
-             file.path(OUT, "panel_S1_lfc2_spearman_correlation.csv"))
-      fwrite(as.data.table(cor_pearson_lfc2, keep.rownames = "track"),
-             file.path(OUT, "panel_S1_lfc2_pearson_correlation.csv"))
-      cat("  Saved panel_S1_lfc2_spearman_correlation.csv and panel_S1_lfc2_pearson_correlation.csv\n")
-    } else {
-      cat("    No peaks with |lfc| > 2, skipping _lfc2 outputs\n")
-    }
   }
 }
 
