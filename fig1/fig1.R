@@ -625,7 +625,8 @@ if (any(c("S2", "S3", "S4") %in% run_panels)) {
   peak_sets <- list(
     cl0_only = cl0_only,
     cl1_only = cl1_only,
-    shared = both
+    shared = both,
+    all = c(cl0_only, cl1_only, both)
   )
 
   bw_esc_atac <- file.path(DATA, "GSE149080/GSM4661960_ATAC_ESC_WT_batch2.rpgc.bw")
@@ -709,6 +710,7 @@ if ("S2" %in% run_panels) {
     make_scatter("shared", bw_cl0, bw_cl1, "cluster 0 RPGC", "cluster 1 RPGC", "shared: cl0 vs cl1"),
     make_scatter("shared", bw_cl0, bw_mef_atac, "cluster 0 RPGC", "MEF ATAC RPGC", "shared: cl0 vs MEF ATAC"),
     make_scatter("shared", bw_cl1, bw_esc_atac, "cluster 1 RPGC", "mESC ATAC RPGC", "shared: cl1 vs mESC ATAC"),
+    make_scatter("all", bw_cl1, bw_esc_atac, "cluster 1 RPGC", "mESC ATAC RPGC", "all peaks: cl1 vs mESC ATAC"),
     ncol = 3
   )
   ggsave(file.path(OUT, "panel_S2_G4_ATAC_correlation.pdf"), p_s2, width = 18, height = 12, device = "pdf")
@@ -734,6 +736,8 @@ if ("S3" %in% run_panels) {
                  "shared: cl0 vs MEF ATAC", highlight = pqs_bed),
     make_scatter("shared", bw_cl1, bw_esc_atac, "cluster 1 RPGC", "mESC ATAC RPGC",
                  "shared: cl1 vs mESC ATAC", highlight = pqs_bed),
+    make_scatter("all", bw_cl1, bw_esc_atac, "cluster 1 RPGC", "mESC ATAC RPGC",
+                 "all peaks: cl1 vs mESC ATAC", highlight = pqs_bed),
     ncol = 3
   )
   ggsave(file.path(OUT, "panel_S3_G4_ATAC_correlation_PQS.pdf"),
