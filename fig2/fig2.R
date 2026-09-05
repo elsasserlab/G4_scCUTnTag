@@ -264,23 +264,71 @@ if ("F" %in% run_panels) {
      g4_umap <- emb[joint$fig2_modality == "G4 scCUT&Tag", ]
      rna_data <- GetAssayData(rna, assay = "RNA", layer = "data")
      g4_data <- GetAssayData(g4, assay = "GA", layer = "data")
-rna_plots <- list(); g4_plots <- list()
+# Use FeaturePlot for better visualization of sparse G4 signal
+      # Co-embed for consistent UMAP coordinates (original approach from dardel/)
+      genes_use <- VariableFeatures(rna)
+      rna$modality <- "scRNA-seq"
+      g4$modality <- "G4 scCUT&Tag"
+      coembed <- merge(x = rna, y = g4)
+      DefaultAssay(coembed) <- "RNA"
+      coembed <- ScaleData(coembed, features = genes_use, do.scale = FALSE, verbose = FALSE)
+      coembed <- RunPCA(coembed, features = genes_use, verbose = FALSE)
+      coembed <- RunUMAP(coembed, dims = 1:15, reduction.name = "coembed_umap", verbose = FALSE)
+      
+      coembed.g4 <- coembed[, coembed$modality == "G4 scCUT&Tag"]
+      coembed.rna <- coembed[, coembed$modality == "scRNA-seq"]
+      
+      rna_plots <- list(); g4_plots <- list()
       for (gene in top) {
         if (gene %in% rownames(rna_data)) {
-          keep <- match(rna_umap$barcode, colnames(rna))
-          keep_ok <- !is.na(keep)
-          z <- rna_umap[keep_ok, ]; z$signal <- as.numeric(rna_data[gene, keep[keep_ok]])
-          rna_plots[[gene]] <- ggplot(z, aes(UMAP1, UMAP2, color = signal)) + geom_point(size = 0.35) +
-            scale_color_viridis(direction = -1, option = "D") +
-            labs(title = gene, color = "RNA") + theme_classic()
+          rna_plots[[gene]] <- FeaturePlot(
+            object = coembed.rna,
+            features = gene,
+            min.cutoff = min(rna_data[gene, ]),
+            max.cutoff = max(rna_data[gene, ]),
+            pt.size = 0.5,
+            raster = TRUE,
+            order = TRUE
+          ) +
+            xlim(-15, 15) + ylim(-10, 10) +
+            scale_color_gradient2(
+              low = "#edf8b1", mid = "#7fcdbb", high = "#225ea8",
+              midpoint = mean(c(min(rna_data[gene, ]), max(rna_data[gene, ])))
+            ) +
+            labs(title = gene, color = "RNA") +
+            theme(
+              legend.position = 'bottom',
+              text = element_text(size = 11),
+              plot.title = element_text(size = 12),
+              axis.text = element_blank(),
+              axis.ticks = element_blank()
+            ) +
+            NoAxes()
         }
         if (gene %in% rownames(g4_data)) {
-          keep <- match(g4_umap$barcode, colnames(g4))
-          keep_ok <- !is.na(keep)
-          z <- g4_umap[keep_ok, ]; z$signal <- as.numeric(g4_data[gene, keep[keep_ok]])
-          g4_plots[[gene]] <- ggplot(z, aes(UMAP1, UMAP2, color = signal)) + geom_point(size = 0.45) +
-            scale_color_viridis(direction = -1, option = "D") +
-            labs(title = gene, color = "G4") + theme_classic()
+          g4_plots[[gene]] <- FeaturePlot(
+            object = coembed.g4,
+            features = gene,
+            min.cutoff = min(g4_data[gene, ]),
+            max.cutoff = max(g4_data[gene, ]),
+            pt.size = 0.5,
+            raster = TRUE,
+            order = TRUE
+          ) +
+            xlim(-15, 15) + ylim(-10, 10) +
+            scale_color_gradient2(
+              low = "#fee5d9", mid = "#fcae91", high = "#cb181d",
+              midpoint = mean(c(min(g4_data[gene, ]), max(g4_data[gene, ])))
+            ) +
+            labs(title = gene, color = "G4") +
+            theme(
+              legend.position = 'bottom',
+              text = element_text(size = 11),
+              plot.title = element_text(size = 12),
+              axis.text = element_blank(),
+              axis.ticks = element_blank()
+            ) +
+            NoAxes()
         }
       }
      save_fig(wrap_plots(rna_plots, ncol = 3), "panel_F_RNA_featureplots", 14, 10)
