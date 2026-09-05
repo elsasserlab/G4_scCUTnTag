@@ -48,10 +48,10 @@ suppressPackageStartupMessages({
 ROOT    <- normalizePath(getwd())
 RESULTS <- file.path(ROOT, "results")
 DATA    <- file.path(ROOT, "github/data")
-OUT     <- file.path(ROOT, "github/fig2", "outputs")
+OUT     <- file.path(ROOT, "fig2", "outputs")
 dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
 
-INT_DIR <- file.path(RESULTS, "integration/outputs")
+INT_DIR <- file.path(RESULTS, "Seurat/GFP_sorted_mousebrain/res0.8/integration/outputs")
 
 G4_RDS      <- file.path(INT_DIR, "G4_scRNA_integration.Rds")
 RNA_RDS     <- file.path(INT_DIR, "scRNA_Seq_Seurat_object.Rds")
@@ -146,7 +146,7 @@ if ("B" %in% run_panels) {
   p_pred <- ggplot(emb[emb$modality == "G4 scCUT&Tag", ], aes(UMAP1, UMAP2, color = prediction)) +
     geom_point(size = 0.45) + labs(title = "Transferred labels", color = NULL) + theme_classic()
   p_rel <- ggplot(emb[emb$modality == "G4 scCUT&Tag", ], aes(UMAP1, UMAP2, color = reliability)) +
-    geom_point(size = 0.45) + scale_color_viridis_c(limits = c(0, 1), na.value = "grey80") +
+    geom_point(size = 0.45) + scale_color_viridis_c(limits = c(0, 1), na.value = "grey80", direction = -1) +
     labs(title = "Integration reliability", color = NULL) + theme_classic()
   save_fig((p_type | p_mod) / (p_pred | p_rel), "panel_B_umap", 14, 12)
 }
@@ -264,23 +264,25 @@ if ("F" %in% run_panels) {
      g4_umap <- emb[joint$fig2_modality == "G4 scCUT&Tag", ]
      rna_data <- GetAssayData(rna, assay = "RNA", layer = "data")
      g4_data <- GetAssayData(g4, assay = "GA", layer = "data")
-     rna_plots <- list(); g4_plots <- list()
-     for (gene in top) {
-       if (gene %in% rownames(rna_data)) {
-         keep <- match(rna_umap$barcode, colnames(rna))
-         keep_ok <- !is.na(keep)
-         z <- rna_umap[keep_ok, ]; z$signal <- as.numeric(rna_data[gene, keep[keep_ok]])
-         rna_plots[[gene]] <- ggplot(z, aes(UMAP1, UMAP2, color = signal)) + geom_point(size = 0.35) +
-           scale_color_viridis(direction = -1) + labs(title = gene, color = "RNA") + theme_classic()
-       }
-       if (gene %in% rownames(g4_data)) {
-         keep <- match(g4_umap$barcode, colnames(g4))
-         keep_ok <- !is.na(keep)
-         z <- g4_umap[keep_ok, ]; z$signal <- as.numeric(g4_data[gene, keep[keep_ok]])
-         g4_plots[[gene]] <- ggplot(z, aes(UMAP1, UMAP2, color = signal)) + geom_point(size = 0.45) +
-           scale_color_gradient(low = "white", high = "red") + labs(title = gene, color = "G4") + theme_classic()
-       }
-     }
+rna_plots <- list(); g4_plots <- list()
+      for (gene in top) {
+        if (gene %in% rownames(rna_data)) {
+          keep <- match(rna_umap$barcode, colnames(rna))
+          keep_ok <- !is.na(keep)
+          z <- rna_umap[keep_ok, ]; z$signal <- as.numeric(rna_data[gene, keep[keep_ok]])
+          rna_plots[[gene]] <- ggplot(z, aes(UMAP1, UMAP2, color = signal)) + geom_point(size = 0.35) +
+            scale_color_viridis(direction = -1, option = "D") +
+            labs(title = gene, color = "RNA") + theme_classic()
+        }
+        if (gene %in% rownames(g4_data)) {
+          keep <- match(g4_umap$barcode, colnames(g4))
+          keep_ok <- !is.na(keep)
+          z <- g4_umap[keep_ok, ]; z$signal <- as.numeric(g4_data[gene, keep[keep_ok]])
+          g4_plots[[gene]] <- ggplot(z, aes(UMAP1, UMAP2, color = signal)) + geom_point(size = 0.45) +
+            scale_color_viridis(direction = -1, option = "D") +
+            labs(title = gene, color = "G4") + theme_classic()
+        }
+      }
      save_fig(wrap_plots(rna_plots, ncol = 3), "panel_F_RNA_featureplots", 14, 10)
      save_fig(wrap_plots(g4_plots, ncol = 3), "panel_F_G4_featureplots", 14, 10)
     message("  Saved ", length(top), " marker gene feature plots (RNA + G4)")
