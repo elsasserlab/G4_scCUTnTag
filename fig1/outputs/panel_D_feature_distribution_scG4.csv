@@ -1,0 +1,19 @@
+category	feature	count	pct
+cl0_only (MEF)	Promoter	2449	23.5322379167868
+cl0_only (MEF)	5' UTR	4	0.0384356683001826
+cl0_only (MEF)	3' UTR	116	1.11463438070529
+cl0_only (MEF)	Exon (CDS)	132	1.26837705390602
+cl0_only (MEF)	Intron	4053	38.94494090516
+cl0_only (MEF)	Intergenic	3653	35.1013740751417
+cl1_only (mESC)	Promoter	3873	28.5282852091927
+cl1_only (mESC)	5' UTR	7	0.0515615792575133
+cl1_only (mESC)	3' UTR	140	1.03123158515027
+cl1_only (mESC)	Exon (CDS)	225	1.65733647613435
+cl1_only (mESC)	Intron	4287	31.5777843252799
+cl1_only (mESC)	Intergenic	5044	37.1538008249853
+shared (both)	Promoter	11052	53.9885691954472
+shared (both)	5' UTR	6	0.0293097552635436
+shared (both)	3' UTR	111	0.542230472375556
+shared (both)	Exon (CDS)	198	0.967221923696937
+shared (both)	Intron	4565	22.2998387963461
+shared (both)	Intergenic	4539	22.1728298568707
