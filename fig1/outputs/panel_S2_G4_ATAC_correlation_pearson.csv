@@ -4,3 +4,4 @@ cl1_only,cl1_only,cluster 1 RPGC,mESC ATAC RPGC,13576,0.259974798383548
 shared,shared: cl0 vs cl1,cluster 0 RPGC,cluster 1 RPGC,20480,0.892977649790628
 shared,shared: cl0 vs MEF ATAC,cluster 0 RPGC,MEF ATAC RPGC,20471,0.204638894829348
 shared,shared: cl1 vs mESC ATAC,cluster 1 RPGC,mESC ATAC RPGC,20471,0.111997401214403
+all,all peaks: cl1 vs mESC ATAC,cluster 1 RPGC,mESC ATAC RPGC,44454,0.14252361793234
