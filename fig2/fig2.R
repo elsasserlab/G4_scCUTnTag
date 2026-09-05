@@ -265,24 +265,16 @@ if ("F" %in% run_panels) {
      rna_data <- GetAssayData(rna, assay = "RNA", layer = "data")
      g4_data <- GetAssayData(g4, assay = "GA", layer = "data")
 # Use FeaturePlot for better visualization of sparse G4 signal
-      # Co-embed for consistent UMAP coordinates (original approach from dardel/)
-      genes_use <- VariableFeatures(rna)
-      rna$modality <- "scRNA-seq"
-      g4$modality <- "G4 scCUT&Tag"
-      coembed <- merge(x = rna, y = g4)
-      DefaultAssay(coembed) <- "RNA"
-      coembed <- ScaleData(coembed, features = genes_use, do.scale = FALSE, verbose = FALSE)
-      coembed <- RunPCA(coembed, features = genes_use, verbose = FALSE)
-      coembed <- RunUMAP(coembed, dims = 1:15, reduction.name = "coembed_umap", verbose = FALSE)
-      
-      coembed.g4 <- coembed[, coembed$modality == "G4 scCUT&Tag"]
-      coembed.rna <- coembed[, coembed$modality == "scRNA-seq"]
+      # Use same joint UMAP as Panel B for consistency
+      joint <- load_joint()
+      joint.g4 <- joint[, joint$fig2_modality == "G4 scCUT&Tag"]
+      joint.rna <- joint[, joint$fig2_modality == "scRNA-seq"]
       
       rna_plots <- list(); g4_plots <- list()
       for (gene in top) {
         if (gene %in% rownames(rna_data)) {
           rna_plots[[gene]] <- FeaturePlot(
-            object = coembed.rna,
+            object = joint.rna,
             features = gene,
             min.cutoff = min(rna_data[gene, ]),
             max.cutoff = max(rna_data[gene, ]),
@@ -290,7 +282,6 @@ if ("F" %in% run_panels) {
             raster = TRUE,
             order = TRUE
           ) +
-            xlim(-15, 15) + ylim(-10, 10) +
             scale_color_gradient2(
               low = "#edf8b1", mid = "#7fcdbb", high = "#225ea8",
               midpoint = mean(c(min(rna_data[gene, ]), max(rna_data[gene, ])))
@@ -299,15 +290,12 @@ if ("F" %in% run_panels) {
             theme(
               legend.position = 'bottom',
               text = element_text(size = 11),
-              plot.title = element_text(size = 12),
-              axis.text = element_blank(),
-              axis.ticks = element_blank()
-            ) +
-            NoAxes()
+              plot.title = element_text(size = 12)
+            )
         }
         if (gene %in% rownames(g4_data)) {
           g4_plots[[gene]] <- FeaturePlot(
-            object = coembed.g4,
+            object = joint.g4,
             features = gene,
             min.cutoff = min(g4_data[gene, ]),
             max.cutoff = max(g4_data[gene, ]),
@@ -315,7 +303,6 @@ if ("F" %in% run_panels) {
             raster = TRUE,
             order = TRUE
           ) +
-            xlim(-15, 15) + ylim(-10, 10) +
             scale_color_gradient2(
               low = "#fee5d9", mid = "#fcae91", high = "#cb181d",
               midpoint = mean(c(min(g4_data[gene, ]), max(g4_data[gene, ])))
@@ -324,11 +311,8 @@ if ("F" %in% run_panels) {
             theme(
               legend.position = 'bottom',
               text = element_text(size = 11),
-              plot.title = element_text(size = 12),
-              axis.text = element_blank(),
-              axis.ticks = element_blank()
-            ) +
-            NoAxes()
+              plot.title = element_text(size = 12)
+            )
         }
       }
      save_fig(wrap_plots(rna_plots, ncol = 3), "panel_F_RNA_featureplots", 14, 10)
