@@ -252,6 +252,11 @@ if ("F" %in% run_panels) {
     slice_max(avg_log2FC, n = 1) %>%
     pull(gene)
   top <- intersect(top, rownames(rna))
+  
+  # Replace 9630013A20Rik (not in G4) with Gpr17 (2nd best COP-NFOL marker, in G4)
+  if ("9630013A20Rik" %in% top) {
+    top[top == "9630013A20Rik"] <- "Gpr17"
+  }
 
    if (length(top) == 0) {
     message("Panel F: no marker genes available")
@@ -315,8 +320,8 @@ if ("F" %in% run_panels) {
             )
         }
       }
-     save_fig(wrap_plots(rna_plots, ncol = 3), "panel_F_RNA_featureplots", 14, 10)
-     save_fig(wrap_plots(g4_plots, ncol = 3), "panel_F_G4_featureplots", 14, 10)
+     save_fig(wrap_plots(rna_plots, ncol = 3), "panel_F_RNA_featureplots", 15, 10)
+     save_fig(wrap_plots(g4_plots, ncol = 3), "panel_F_G4_featureplots", 15, 10)
     message("  Saved ", length(top), " marker gene feature plots (RNA + G4)")
   }
 }
