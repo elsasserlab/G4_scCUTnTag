@@ -220,6 +220,12 @@ if ("E" %in% run_panels) {
     slice_max(avg_log2FC, n = 1) %>%
     pull(gene)
   top <- intersect(top, rownames(rna))
+  
+  # Replace 9630013A20Rik with Gpr17 for consistency with Panel F
+  if ("9630013A20Rik" %in% top) {
+    top[top == "9630013A20Rik"] <- "Gpr17"
+  }
+  
    if (length(top) > 0) {
      joint <- load_joint()
      emb <- as.data.frame(Embeddings(joint, "fig2_umap"))
@@ -229,9 +235,34 @@ if ("E" %in% run_panels) {
      rna_umap$cell_type <- as.character(joint$cell_type[joint$fig2_modality == "scRNA-seq"])
      p_umap <- ggplot(rna_umap, aes(UMAP1, UMAP2, color = cell_type)) +
        geom_point(size = 0.35) + labs(title = "scRNA-seq cell types", color = NULL) + theme_classic()
-     p_vln <- VlnPlot(rna, features = top, group.by = "cell_type", pt.size = 0, ncol = 3)
-     save_fig(p_umap, "panel_E_umap", 8, 7)
-     save_fig(p_vln, "panel_E_markers", 14, ceiling(length(top) / 3) * 3)
+     
+     # Combined UMAP with RNA (gray-blue) and G4 (gray-red) gradients
+     g4_umap <- emb[joint$fig2_modality == "G4 scCUT&Tag", c("UMAP1", "UMAP2")]
+     g4_umap$modality <- "G4 scCUT&Tag"
+     rna_umap_plot <- emb[joint$fig2_modality == "scRNA-seq", c("UMAP1", "UMAP2")]
+     rna_umap_plot$modality <- "scRNA-seq"
+     combined_umap <- rbind(rna_umap_plot, g4_umap)
+     
+p_combined <- ggplot(combined_umap, aes(UMAP1, UMAP2, color = modality)) +
+       geom_point(size = 0.3, alpha = 0.8) +
+       scale_color_manual(
+         values = c("scRNA-seq" = "#2171b5", "G4 scCUT&Tag" = "#cb181d"),
+         name = "Modality"
+       ) +
+       labs(title = "Co-embedded scRNA-seq + G4 scCUT&Tag") +
+       theme_classic() +
+       theme(
+         legend.position = "bottom",
+         text = element_text(size = 22),
+         plot.title = element_text(size = 24, face = "bold"),
+         legend.text = element_text(size = 20),
+         legend.title = element_text(size = 22)
+       )
+      
+      p_vln <- VlnPlot(rna, features = top, group.by = "cell_type", pt.size = 0.5, ncol = 3)
+      save_fig(p_umap, "panel_E_umap", 8, 7)
+      save_fig(p_combined, "panel_E_combined_umap", 8, 7)
+      save_fig(p_vln, "panel_E_markers", 14, ceiling(length(top) / 3) * 3)
   } else {
     message("Panel E: no marker genes available")
   }
@@ -294,8 +325,8 @@ if ("F" %in% run_panels) {
             labs(title = gene, color = "RNA") +
             theme(
               legend.position = 'bottom',
-              text = element_text(size = 11),
-              plot.title = element_text(size = 12)
+              text = element_text(size = 22),
+              plot.title = element_text(size = 24)
             )
         }
         if (gene %in% rownames(g4_data)) {
@@ -315,14 +346,67 @@ if ("F" %in% run_panels) {
             labs(title = gene, color = "G4") +
             theme(
               legend.position = 'bottom',
-              text = element_text(size = 11),
-              plot.title = element_text(size = 12)
+              text = element_text(size = 22),
+              plot.title = element_text(size = 24)
             )
         }
       }
-     save_fig(wrap_plots(rna_plots, ncol = 3), "panel_F_RNA_featureplots", 15, 10)
-     save_fig(wrap_plots(g4_plots, ncol = 3), "panel_F_G4_featureplots", 15, 10)
-    message("  Saved ", length(top), " marker gene feature plots (RNA + G4)")
+save_fig(wrap_plots(rna_plots, ncol = 3), "panel_F_RNA_featureplots", 15, 18)
+     save_fig(wrap_plots(g4_plots, ncol = 3), "panel_F_G4_featureplots", 15, 18)
+     message("  Saved ", length(top), " marker gene feature plots (RNA + G4)")
+     
+     # Combined RNA+G4 feature plots (both modalities on same UMAP)
+     combined_plots <- list()
+     for (gene in top) {
+       if (gene %in% rownames(rna_data) && gene %in% rownames(g4_data)) {
+         # Get joint UMAP coordinates for all cells
+         joint_emb <- as.data.frame(Embeddings(joint, "fig2_umap"))
+         names(joint_emb)[1:2] <- c("UMAP1", "UMAP2")
+         joint_emb$barcode <- rownames(joint_emb)
+         joint_emb$modality <- joint$fig2_modality
+         
+         # Add signal values
+         joint_emb$signal <- NA_real_
+         rna_cells <- joint_emb$modality == "scRNA-seq"
+         g4_cells <- joint_emb$modality == "G4 scCUT&Tag"
+         
+         rna_barcodes <- joint_emb[rna_cells, "barcode"]
+         rna_idx <- match(rna_barcodes, colnames(rna))
+         rna_ok <- !is.na(rna_idx)
+         joint_emb$signal[rna_cells][rna_ok] <- as.numeric(rna_data[gene, rna_idx[rna_ok]])
+         
+         g4_barcodes <- joint_emb[g4_cells, "barcode"]
+         g4_idx <- match(g4_barcodes, colnames(g4))
+         g4_ok <- !is.na(g4_idx)
+         joint_emb$signal[g4_cells][g4_ok] <- as.numeric(g4_data[gene, g4_idx[g4_ok]])
+         
+         # Plot with modality-specific colors
+         combined_plots[[gene]] <- ggplot(joint_emb, aes(UMAP1, UMAP2)) +
+           geom_point(data = joint_emb[joint_emb$modality == "scRNA-seq", ],
+                     aes(color = signal), size = 0.3, alpha = 0.3) +
+           geom_point(data = joint_emb[joint_emb$modality == "G4 scCUT&Tag", ],
+                     aes(color = signal), size = 0.3, alpha = 0.3) +
+           scale_color_gradientn(
+             colors = c("#d9d9d9", "#2171b5", "#d9d9d9", "#cb181d"),
+             values = scales::rescale(c(0, 0.5, 0.5, 1)),
+             name = gene,
+             breaks = c(0, 1),
+             labels = c("Low", "High")
+           ) +
+           labs(title = gene, subtitle = "RNA (blue) | G4 (red)") +
+           theme_minimal() +
+           theme(
+             legend.position = "bottom",
+             plot.title = element_text(size = 11, face = "bold"),
+             plot.subtitle = element_text(size = 9, color = "gray40"),
+             axis.text = element_blank(),
+             axis.ticks = element_blank(),
+             panel.grid = element_blank()
+           )
+       }
+     }
+     save_fig(wrap_plots(combined_plots, ncol = 4), "panel_F_combined_RNA_G4", 20, 11.25)
+     message("  Saved panel_F_combined_RNA_G4.pdf (combined RNA+G4 feature plots)")
   }
 }
 
