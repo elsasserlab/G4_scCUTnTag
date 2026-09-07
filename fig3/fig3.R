@@ -9,11 +9,15 @@
 #   C - Coverage at astrocyte marker genes
 #   D - Feature plots: Tnik, Pitpnc1, Pbx1, Nwd1 (normalized RNA, viridis)
 #   E - Cicero browser tracks
+#   S1 - Supplementary: AST-specific G4 peaks intersected with ENCODE4 cCRE
+#       classes (data/genome/cCRE.mm10.bed); horizontal stacked bar with
+#       a "no cCRE overlap" category (primary class = max bp overlap).
 #
 # Run from repo root:
 #   Rscript fig3/fig3.R
 #   Rscript fig3/fig3.R --only=A,B
 #   Rscript fig3/fig3.R --skip=E
+#   Rscript fig3/fig3.R --only=S1
 # ===========================================================================
 
 suppressPackageStartupMessages({
@@ -682,6 +686,108 @@ if (run_panel("E")) {
   )
   save_fig(p_E, "panel_E_cicero_tracks", width = 10, height = 27.5)
   cat("  Saved panel_E_cicero_tracks.pdf\n")
+}
+
+# ===========================================================================
+# Panel S1: ENCODE4 cCRE classes intersected with AST-specific G4 peaks
+# ===========================================================================
+if (run_panel("S1")) {
+  cat("== Panel S1: AST-specific peaks vs ENCODE4 cCRE classes ==\n")
+
+  # AST-specific peak set is exported by Panel C
+  # (outputs/GSM8836086_AST_specific_peaks.bed).
+  ast_bed_s1 <- file.path(OUT, "GSM8836086_AST_specific_peaks.bed")
+  ccre_bed_s1 <- file.path(ROOT, "data", "genome", "cCRE.mm10.bed")
+  if (!file.exists(ast_bed_s1))
+    stop("Panel S1 needs outputs/GSM8836086_AST_specific_peaks.bed; run Panel C first.")
+  if (!file.exists(ccre_bed_s1))
+    stop("Panel S1 needs data/genome/cCRE.mm10.bed (ENCODE4 Registry cCREs).")
+
+  canonical_s1 <- c(paste0("chr", 1:19), "chrX", "chrY")
+  # ENCODE4 Registry cCRE classes encoded in BED column 9 (itemRgb);
+  # official ZLab palette (https://wiki.wenglab.org/references/color-mappings/).
+  ccre_label_s1 <- c(
+    "255,0,0" = "PLS", "255,167,0" = "pELS", "255,205,0" = "dELS",
+    "255,170,170" = "CA-H3K4me3", "0,176,240" = "CA-CTCF",
+    "6,218,147" = "CA-only", "190,40,229" = "CA-TF", "216,118,236" = "TF-only"
+  )
+  ccre_col_s1 <- c(
+    PLS = "#FF0000", pELS = "#FFA700", dELS = "#FFCD00",
+    "CA-H3K4me3" = "#FFAAAA", "CA-CTCF" = "#00B0F0",
+    "CA-only" = "#06DA93", "CA-TF" = "#BE28E5", "TF-only" = "#D876EC"
+  )
+  ccre_full_s1 <- c(
+    dELS = "dELS — distal enhancer-like signature",
+    "CA-CTCF" = "CA-CTCF — chromatin accessibility + CTCF",
+    "CA-only" = "CA-only — chromatin accessibility only",
+    PLS = "PLS — promoter-like signature",
+    pELS = "pELS — proximal enhancer-like signature",
+    "CA-H3K4me3" = "CA-H3K4me3 — chromatin accessibility + H3K4me3",
+    "TF-only" = "TF-only — transcription factor binding only",
+    "CA-TF" = "CA-TF — chromatin accessibility + transcription factor"
+  )
+
+  rows_s1 <- fread(ast_bed_s1, header = FALSE, fill = TRUE)
+  rows_s1 <- rows_s1[V1 %in% canonical_s1]
+  ast_s1 <- GenomicRanges::GRanges(
+    seqnames = rows_s1$V1, ranges = IRanges(rows_s1$V2 + 1L, rows_s1$V3)
+  )
+  n_s1 <- length(ast_s1)
+
+  cref_s1 <- fread(ccre_bed_s1, header = FALSE, fill = TRUE)
+  cref_s1 <- cref_s1[V1 %in% canonical_s1]
+  cref_s1[, cls := unname(ccre_label_s1[V9])]
+  cc_s1 <- GenomicRanges::GRanges(
+    seqnames = cref_s1$V1, ranges = IRanges(cref_s1$V2 + 1L, cref_s1$V3),
+    cls = cref_s1$cls
+  )
+
+  # Each AST peak is assigned a single class: the one it overlaps with the
+  # greatest bp overlap (ties broken by genomic order); peaks without cCRE
+  # overlap form a "No cCRE" category.
+  hit_s1 <- as.data.table(GenomicRanges::findOverlaps(ast_s1, cc_s1))
+  hit_s1[, cls := cc_s1$cls[subjectHits]]
+  hit_s1[, ov_bp := width(pintersect(ast_s1[queryHits], cc_s1[subjectHits]))]
+  best_s1 <- hit_s1[
+    order(queryHits, -ov_bp, subjectHits),
+    .(cls = cls[1]), by = queryHits
+  ]
+  peak_class_s1 <- rep("No cCRE", n_s1)
+  peak_class_s1[best_s1$queryHits] <- best_s1$cls
+
+  tab_s1 <- as.data.table(table(peak_class_s1))[, .(class = peak_class_s1, n = N)]
+  tab_s1[, pct := n / sum(n)]
+  setorder(tab_s1, -n)
+  fwrite(tab_s1, file.path(OUT, "panel_S1_AST_cCRE_partition.csv"))
+
+  lvl_s1 <- unique(c(tab_s1$class[tab_s1$class != "No cCRE"], "No cCRE"))
+  tab_s1[, class := factor(class, levels = rev(lvl_s1))]
+  tab_s1[, lab := sprintf("%d (%.0f%%)", n, 100 * pct)]
+  cols_s1 <- c(ccre_col_s1, "No cCRE" = "grey45")
+  leg_lbl_s1 <- function(cl) {
+    v <- unname(sapply(as.character(cl),
+      function(x) ifelse(x == "No cCRE", "No cCRE overlap", ccre_full_s1[x])))
+    factor(v, levels = v)
+  }
+
+  p_S1 <- ggplot(tab_s1, aes(x = "AST-specific G4 peaks", y = n, fill = class)) +
+    geom_col(width = 0.55, colour = "white", linewidth = 0.4) +
+    geom_text(aes(label = lab), colour = "white",
+              position = position_stack(vjust = 0.5),
+              size = 3.2, fontface = "bold") +
+    coord_flip() +
+    scale_fill_manual(values = cols_s1, name = NULL, labels = leg_lbl_s1) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.01))) +
+    labs(x = NULL, y = "number of AST-specific G4 peaks") +
+    theme_minimal(base_size = 12) +
+    theme(panel.grid = element_blank(),
+          legend.position = "bottom",
+          legend.text = element_text(size = 10),
+          axis.text.y = element_blank())
+  save_fig(p_S1, "panel_S1_AST_cCRE_stacked", width = 8, height = 3.2)
+  cat("  Saved panel_S1_AST_cCRE_stacked.pdf (", n_s1,
+      "AST peaks; largest class:", as.character(tab_s1$class[1]),
+      sprintf("%d (%.0f%%)", tab_s1$n[1], 100 * tab_s1$pct[1]), ")\n")
 }
 
 cat("\nAll Figure 3 outputs written to", OUT, "/\n")
