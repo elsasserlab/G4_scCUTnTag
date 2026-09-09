@@ -15,8 +15,8 @@ This directory contains the output files from scBridge multi-omics integration:
 These files were generated using scBridge (Zhang et al., 2022) with the following workflow:
 
 ### Input Data
-1. **G4 scCUT&Tag data:** Processed Seurat object from `../../data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds`
-2. **scRNA-seq reference:** Bartosovic et al. mouse brain data from `../../data/scRNA-Seq/scRNA_Seq-mouse_brain.Rds`
+1. **G4 scCUT&Tag data:** Processed Seurat object from `data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds`
+2. **scRNA-seq reference:** Bartosovic et al. mouse brain data from `data/GSE163484/scRNA_Seq-mouse_brain.Rds`
 
 ### Generation Steps
 

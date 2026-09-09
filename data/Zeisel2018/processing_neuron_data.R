@@ -1,3 +1,11 @@
+# NOTE: This script generates scRNA_Seq-Zeisel_et_al-neuron.Rds from the
+# level-2 neuron loom files (l2_neurons_*.agg.loom) of the Zeisel et al. (2018)
+# mouse nervous system atlas (Cell 174:999-1014, DOI:
+# 10.1016/j.cell.2018.06.021, http://mousebrain.org). Those loom files are no
+# longer publicly hosted (mousebrain.org is offline), so the script cannot run
+# as-is. It is kept here to document exactly how the Rds was produced. To run
+# it, place the loom files in this same directory; the Rds and norm data are
+# written here as well.
 print("Load R packages")
 if (!require("pacman"))
   install.packages("pacman")
@@ -8,8 +16,17 @@ pacman::p_load("devtools",
                "tidyverse",
                "RColorBrewer")
 
+# script directory: loom inputs are read from here and outputs are written here
+args = commandArgs(trailingOnly = FALSE)
+file_arg = sub("^--file=", "", args[grep("--file=", args)])
+SCRIPT_DIR = if (length(file_arg) && nzchar(file_arg) && file.exists(file_arg)) {
+  dirname(normalizePath(file_arg))
+} else {
+  getwd()
+}
+
 # result folder
-result_folder = "results/"
+result_folder = paste0(SCRIPT_DIR, "/")
 dir.create(result_folder, showWarnings = FALSE, recursive = TRUE)
 
 # helper function for creating Seurat objects
@@ -42,29 +59,30 @@ make_seurat_object = function(label, lfile) {
 }
 
 # loom files (level 2) from http://mousebrain.org/ (Linnarsson Lab, Zeisel et al. 2018)
+loom_path = function(f) file.path(SCRIPT_DIR, f)
 lfiles = list.files(
-  "../../../data/Zeisel_et_al/neuron_scRNA_Seq/",
+  SCRIPT_DIR,
   full.names = TRUE,
   pattern = "*.loom"
 )
-amygdala = make_seurat_object(label = "neuron_amygdala", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_amygdala.agg.loom")
-cerebellum = make_seurat_object(label = "neuron_cerebellum", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_cerebellum.agg.loom")
-cortex1 = make_seurat_object(label = "neuron_cortex1", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_cortex1.agg.loom")
-cortex2 = make_seurat_object(label = "neuron_cortex2", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_cortex2.agg.loom")
-cortex3 = make_seurat_object(label = "neuron_cortex3", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_cortex3.agg.loom")
-drg = make_seurat_object(label = "neuron_drg", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_drg.agg.loom")
-enteric = make_seurat_object(label = "neuron_enteric", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_enteric.agg.loom")
-hippocampus = make_seurat_object(label = "neuron_hippocampus", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_hippocampus.agg.loom")
-hypothalamus = make_seurat_object(label = "neuron_hypothalamus", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_hypothalamus.agg.loom")
-medulla = make_seurat_object(label = "neuron_medulla", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_medulla.agg.loom")
-midbraindorsal = make_seurat_object(label = "neuron_midbraindorsal", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_midbraindorsal.agg.loom")
-midbrainventral = make_seurat_object(label = "neuron_midbrainventral", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_midbrainventral.agg.loom")
-striatumdorsal = make_seurat_object(label = "neuron_striatumdorsal", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_striatumdorsal.agg.loom")
-olfactory = make_seurat_object(label = "neuron_olfactory", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_olfactory.agg.loom")
-striatumventral = make_seurat_object(label = "neuron_striatumventral", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_striatumventral.agg.loom")
-pons = make_seurat_object(label = "neuron_pons", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_pons.agg.loom")
-sympathetic = make_seurat_object(label = "neuron_sympathetic", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_sympathetic.agg.loom")
-thalamus = make_seurat_object(label = "neuron_thalamus", lfile = "../../../data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_thalamus.agg.loom")
+amygdala = make_seurat_object(label = "neuron_amygdala", lfile = loom_path("l2_neurons_amygdala.agg.loom"))
+cerebellum = make_seurat_object(label = "neuron_cerebellum", lfile = loom_path("l2_neurons_cerebellum.agg.loom"))
+cortex1 = make_seurat_object(label = "neuron_cortex1", lfile = loom_path("l2_neurons_cortex1.agg.loom"))
+cortex2 = make_seurat_object(label = "neuron_cortex2", lfile = loom_path("l2_neurons_cortex2.agg.loom"))
+cortex3 = make_seurat_object(label = "neuron_cortex3", lfile = loom_path("l2_neurons_cortex3.agg.loom"))
+drg = make_seurat_object(label = "neuron_drg", lfile = loom_path("l2_neurons_drg.agg.loom"))
+enteric = make_seurat_object(label = "neuron_enteric", lfile = loom_path("l2_neurons_enteric.agg.loom"))
+hippocampus = make_seurat_object(label = "neuron_hippocampus", lfile = loom_path("l2_neurons_hippocampus.agg.loom"))
+hypothalamus = make_seurat_object(label = "neuron_hypothalamus", lfile = loom_path("l2_neurons_hypothalamus.agg.loom"))
+medulla = make_seurat_object(label = "neuron_medulla", lfile = loom_path("l2_neurons_medulla.agg.loom"))
+midbraindorsal = make_seurat_object(label = "neuron_midbraindorsal", lfile = loom_path("l2_neurons_midbraindorsal.agg.loom"))
+midbrainventral = make_seurat_object(label = "neuron_midbrainventral", lfile = loom_path("l2_neurons_midbrainventral.agg.loom"))
+striatumdorsal = make_seurat_object(label = "neuron_striatumdorsal", lfile = loom_path("l2_neurons_striatumdorsal.agg.loom"))
+olfactory = make_seurat_object(label = "neuron_olfactory", lfile = loom_path("l2_neurons_olfactory.agg.loom"))
+striatumventral = make_seurat_object(label = "neuron_striatumventral", lfile = loom_path("l2_neurons_striatumventral.agg.loom"))
+pons = make_seurat_object(label = "neuron_pons", lfile = loom_path("l2_neurons_pons.agg.loom"))
+sympathetic = make_seurat_object(label = "neuron_sympathetic", lfile = loom_path("l2_neurons_sympathetic.agg.loom"))
+thalamus = make_seurat_object(label = "neuron_thalamus", lfile = loom_path("l2_neurons_thalamus.agg.loom"))
 
 # Seurat workflow
 seurat_neurons = merge(
@@ -227,6 +245,6 @@ ggsave(
 # export Seurat object
 neuron_rna@meta.data = neuron_rna@meta.data %>% rename(cell_type = orig.ident)
 saveRDS(neuron_rna,
-        "../../data/scRNA-Seq/scRNA_Seq-Zeisel_et_al-neuron.Rds")
+        file.path(SCRIPT_DIR, "scRNA_Seq-Zeisel_et_al-neuron.Rds"))
 write_tsv(norm_data,
-          "../../data/scRNA-Seq/scRNA_Seq-Zeisel_et_al-neuron-norm_data.tsv")
+          file.path(SCRIPT_DIR, "scRNA_Seq-Zeisel_et_al-neuron-norm_data.tsv"))

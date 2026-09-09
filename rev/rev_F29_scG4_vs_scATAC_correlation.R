@@ -21,8 +21,8 @@ suppressPackageStartupMessages({
 
 # ----- Paths -----
 ROOT <- normalizePath(getwd())
-DATA <- file.path(ROOT, "github/data")
-OUT_DIR <- file.path(ROOT, "github/rev/outputs/scG4_vs_scATAC")
+DATA <- file.path(ROOT, "data")
+OUT_DIR <- file.path(ROOT, "rev/outputs/scG4_vs_scATAC")
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 # scG4 GFP+ data

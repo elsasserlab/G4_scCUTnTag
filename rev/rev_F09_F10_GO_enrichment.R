@@ -54,7 +54,7 @@ CANONICAL <- c(paste0("chr", 1:19), "chrX", "chrY")
 read_peak_gr <- function(path, label) {
   dt <- fread(path)
   GRanges(seqnames = dt$V1,
-          ranges   = IRanges(start = dt$V2, end = dt$V3,
+          ranges   = IRanges(start = dt$V2 + 1L, end = dt$V3,
                              names = rep(label, nrow(dt))))
 }
 cat("Loading original peak files...\n")

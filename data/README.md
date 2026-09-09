@@ -79,6 +79,7 @@ data/
 ├── pqsfinder/                # PQS predictions (shipped: ~407M)
 ├── GSE291468/                # Primary scG4 CUT&Tag data (partial: metadata + corrected BWs)
 ├── GSE163484/                # Bartosovic scRNA-seq (downloaded from GEO)
+├── Zeisel2018/               # Zeisel neuron scRNA-seq Rds + processing script (author-provided)
 ├── GSE198467/                # Brain snATAC-seq (downloaded from GEO)
 ├── GSE149080/                # mESC ATAC-seq (downloaded from GEO)
 ├── GSE211123/                # 3T3 ATAC-seq (downloaded from GEO)
@@ -98,6 +99,7 @@ Our scG4 CUT&Tag data from three experiments:
 ### Reference Data
 
 - **GSE163484**: Bartosovic et al. mouse brain scRNA-seq (Fig 2-3 reference)
+- **Zeisel2018**: Zeisel et al. neuron scRNA-seq (Fig 4 reference)
 - **GSE198467**: Brain snATAC-seq (Fig 4 reference)
 - **GSE149080**: mESC ATAC-seq (bulk reference)
 - **GSE211123**: 3T3 ATAC-seq (bulk reference)
@@ -149,13 +151,27 @@ These files are tracked by git and synced when you clone the repo:
 ### Downloaded from GEO (~2+ GB)
 Run `bash download_data.sh` to download these before generating figures:
 
-- **GSE163484**: Bartosovic scRNA-seq
+- **GSE163484**: Bartosovic scRNA-seq (counts CSV + annotation CSV)
 - **GSE198467**: Brain snATAC-seq
 - **GSE149080**: mESC ATAC-seq
 - **GSE211123**: 3T3 ATAC-seq
 - **GSE217860**: 3T3 G4 CUT&Tag
 - **GSE90894**: Chronis RNA-seq table
 - **GSE291468**: Most bigWigs, Seurat objects, narrowPeak files
+
+### Author-provided Seurat objects (not on GEO)
+
+Two processed Seurat reference objects used in this study are **not available
+on GEO** and therefore cannot be downloaded by `download_data.sh`. They were
+provided directly by the study authors and must be obtained by contacting them.
+Place them at the locations indicated below (both are gitignored due to file
+size). A direct download link (e.g. data-repository/Zenodo) will be added to
+`download_data.sh` once available.
+
+| File | Source study | Place at |
+|------|--------------|----------|
+| `scRNA_Seq-mouse_brain.Rds` | Bartosovic et al., *Nat Biotechnol* 2021 (GSE163484); author-provided Seurat object | `GSE163484/scRNA_Seq-mouse_brain.Rds` |
+| `scRNA_Seq-Zeisel_et_al-neuron.Rds` | Zeisel et al., *Cell* 2018, 174:999-1014, DOI: 10.1016/j.cell.2018.06.021 (mousebrain.org); processed Seurat object of the neuron population, built by `Zeisel2018/processing_neuron_data.R` from the (now offline) level-2 neuron loom files | `Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds` |
 
 See `.gitignore_data` for the complete list of gitignored files.
 

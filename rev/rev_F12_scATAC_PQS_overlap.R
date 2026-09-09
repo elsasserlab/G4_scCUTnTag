@@ -100,6 +100,7 @@ for(cl in names(cluster_peaks)) {
 cat("\nLoading PQS sites (min score 20)...\n")
 pqs <- import(PQS_BED, format = "BED")
 pqs <- pqs[as.character(seqnames(pqs)) %in% CANONICAL]
+pqs <- pqs[!is.na(mcols(pqs)$score) & mcols(pqs)$score >= 20]
 cat(sprintf("  PQS sites: %s\n", format(length(pqs), big.mark = ",")))
 
 # ----- Overlap counting function -----
@@ -126,7 +127,7 @@ overlap_counts <- function(peaks_gr, pqs_gr, label, genome_bp = MM10_GENOME_BP) 
   
   list(
     peaks_only        = n_peaks - n_int,
-    pqs_only          = n_pqs   - n_int,
+    pqs_only          = n_pqs   - n_pqs_in,
     overlap           = n_int,
     n_peaks           = n_peaks,
     n_pqs             = n_pqs,

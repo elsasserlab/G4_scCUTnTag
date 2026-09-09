@@ -124,7 +124,7 @@ Our scG4 CUT&Tag data from three experiments:
 | Figure | GEO Sample(s) | Key Files | Role |
 |--------|---------------|-----------|------|
 | **Fig. 1** | GSM8836088 (mESC-MEF)<br>GSM8836082/84 (bulk controls) | `GSM8836088_mESCMEF_Seurat_object.Rds`<br>`GSM8836088_cluster_{0,1}_peaks.narrowPeak`<br>`GSM8836082/84_bulkG4CnT_*.bw` | mESC-MEF UMAP/QC, cluster-vs-bulk overlaps, marker PCA, RPGC heatmaps, correlation, browser tracks |
-| **Fig. 2** | GSM8836086 (sorted GFP+)<br>GSE163484 (scRNA reference) | `GSM8836086_GFPpos_Seurat_object.Rds`<br>`scRNA_Seq-mouse_brain.Rds`<br>`results/integration/outputs/` | CCA co-embedding, transferred cell labels, prediction scores, overlap scores, marker violins, RNA/G4 feature plots |
+| **Fig. 2** | GSM8836086 (sorted GFP+)<br>GSE163484 (scRNA reference) | `GSM8836086_GFPpos_Seurat_object.Rds`<br>`scRNA_Seq-mouse_brain.Rds`<br>`fig2/results/integration/outputs/` | CCA co-embedding, transferred cell labels, prediction scores, overlap scores, marker violins, RNA/G4 feature plots |
 | **Fig. 3** | GSM8836086 (sorted GFP+)<br>GSE163484 (scRNA reference) | `results/scBridge/umap_coembedded.csv`<br>`scbridge_predictions.csv`<br>`GSM8836086_Predicted_Astrocytes_RPGC.bw` | scBridge embedding, AST differential G4, AST coverage, RNA feature plots, reliability analyses |
 | **Fig. 3E** | Derived from sorted GFP+ | `fig3/results/cicero/cicero_GFPsorted-{predAST,pred_nonAST}.Rds`<br>`GSM8836086_Predicted_{Astrocytes,non-Astrocytes}_RPGC.bw`<br>`PQS_scores.mm10.bw`<br>`data/cCRE/` | Directly generated Cicero co-accessibility browser tracks for five G4 loci |
 | **Fig. 4** | GSM8836087 (unsorted)<br>GSM8836086 (sorted reference) | `GSM8836087_unsorted_Seurat_object.Rds`<br>`GSM8836087_unsorted_cluster_{0,1}_peaks.narrowPeak` | Query-to-reference mapping, mapped labels, prediction scores, peak-overlap Venn |
@@ -206,10 +206,6 @@ Each figure directory contains a markdown legend with full derivation notes:
 - `fig2/Fig2_legend.md`
 - `fig3/Fig3_legend.md`
 - `fig4/Fig4_legend.md`
-- `rev/Revision_figures_legend.md`
-
-See `ALL_FIGURE_LEGENDS.md` for a combined view of all figure legends.
-
 ---
 
 ## Preprint
@@ -229,17 +225,6 @@ All primary data is available at GEO: **GSE291468**
 
 Lyu, T., et al. (2025). "Single-cell G-quadruplex CUT&Tag reveals astrocyte-specific epigenetic regulation in mouse brain." *bioRxiv*. https://doi.org/10.1101/2025.04.03.647101
 
----
-
-## License
-
-[Add your license here]
-
----
-
-## Contact
-
-[Add contact information here]
 
 ---
 
@@ -263,7 +248,7 @@ This downloads ~2GB of GEO data files.
 
 ### Step 2: Regenerate Corrected BigWigs (Optional)
 
-The corrected bigWigs are already bundled in `data/GSE291468/`. Only regenerate if needed:
+Updated bigWigs (include PCR duplicate removal) are already bundled in `data/GSE291468/`. Only regenerate if needed:
 
 ```bash
 cd data/GSE291468
@@ -272,13 +257,6 @@ bash regenerate_bigwigs.sh
 sbatch regenerate_bigwigs.sbatch
 cd ../..
 ```
-
-**Why this may be necessary:**
-- Original GEO files used wrong effectiveGenomeSize (2150570000 vs 2652783500 for mm10)
-- Missing duplicate removal step
-- Causes artificial signal spikes in small cell populations
-
-**Wait for completion** before generating figures (20-40 minutes).
 
 ### Step 3: Generate Figures
 
@@ -289,23 +267,11 @@ Rscript fig2/fig2.R
 Rscript fig3/fig3.R
 Rscript fig4/fig4.R
 
-# Revision figures (17 scripts)
-for script in rev/rev_F*.R; do
-    Rscript "$script"
-done
 ```
 
 ---
 
 ## Troubleshooting
-
-### Missing data files
-```bash
-# Check what's missing
-ls data/GSE291468/
-# Re-download if needed
-cd data && bash download_data.sh
-```
 
 ### R package errors
 Install required packages:

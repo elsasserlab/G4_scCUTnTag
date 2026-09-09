@@ -3,17 +3,20 @@ if (!require("pacman"))
 pacman::p_load("Seurat", "glue", "tidyverse", "data.table"
 )
 
-# make folders for outputs
-system(paste0("mkdir ", "results/scBridge/input/"))
+script_arg <- commandArgs(trailingOnly = FALSE)
+script_arg <- script_arg[grepl("^--file=", script_arg)]
+SCRIPT_DIR <- dirname(normalizePath(sub("^--file=", "", script_arg[1])))
+ROOT <- dirname(SCRIPT_DIR)
 
 # scBridge needs:
 # A: gene activity scores of scCut&Tag
 # B: normalized scRNA-Seq counts
 # keep those genes that overlap between A and B.
 
-rna_path = "../../data/scRNA-Seq/scRNA_Seq-mouse_brain.Rds"
-g4_path = "../../data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds"
-result_folder = "results/scBridge/"
+rna_path = file.path(ROOT, "data/GSE163484/scRNA_Seq-mouse_brain.Rds")
+g4_path = file.path(ROOT, "data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds")
+result_folder = file.path(SCRIPT_DIR, "results/scBridge")
+dir.create(result_folder, recursive = TRUE, showWarnings = FALSE)
 
 # scRNA-Seq input - Bartosovic et al.
 rna_bartosovic = readRDS(rna_path)

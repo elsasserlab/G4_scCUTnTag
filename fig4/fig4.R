@@ -41,10 +41,13 @@ suppressPackageStartupMessages({
   library(circlize)
 })
 
-ROOT    <- normalizePath(getwd())
+script_arg <- commandArgs(trailingOnly = FALSE)
+script_arg <- script_arg[grepl("^--file=", script_arg)]
+SCRIPT_DIR <- dirname(normalizePath(sub("^--file=", "", script_arg[1])))
+ROOT    <- dirname(SCRIPT_DIR)
 RESULTS <- file.path(ROOT, "results")
-DATA    <- file.path(ROOT, "github/data")
-OUT     <- file.path(ROOT, "github/fig4", "outputs")
+DATA    <- file.path(ROOT, "data")
+OUT     <- file.path(SCRIPT_DIR, "outputs")
 dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
 
 UNSORTED_RDS <- file.path(DATA, "GSE291468/GSM8836087_unsorted_Seurat_object.Rds")
