@@ -272,29 +272,77 @@ if ("C" %in% run_panels) {
   
   oc0 <- compute_pqs_overlap(cl0_only, pqs_gr, "MEF (cluster 0)")
   oc1 <- compute_pqs_overlap(cl1_only, pqs_gr, "mESC (cluster 1)")
+  oc_shared <- compute_pqs_overlap(both, pqs_gr, "shared (both)")
   
   bar_mesc_mef <- data.frame(
-    cluster = c("MEF (cluster 0)", "mESC (cluster 1)"),
-    pct     = c(oc0$pct, oc1$pct),
-    overlap = c(oc0$n_overlap, oc1$n_overlap),
-    n_peaks = c(oc0$n_peaks, oc1$n_peaks)
+    cluster = c("MEF (cluster 0)", "mESC (cluster 1)", "shared (both)"),
+    pct     = c(oc0$pct, oc1$pct, oc_shared$pct),
+    overlap = c(oc0$n_overlap, oc1$n_overlap, oc_shared$n_overlap),
+    n_peaks = c(oc0$n_peaks, oc1$n_peaks, oc_shared$n_peaks)
   )
   bar_mesc_mef$label <- sprintf("%.1f%%\n(%s / %s)",
                                 bar_mesc_mef$pct,
                                 format(bar_mesc_mef$overlap, big.mark = ","),
                                 format(bar_mesc_mef$n_peaks, big.mark = ","))
   
+  # --- regioneR analysis: union of all MEF/ESC scG4 peaks vs PQS ---
+  cat("\n=== regioneR analysis (union of all MEF/ESC peaks, chr1, 1000 permutations) ===\n")
+  suppressPackageStartupMessages(library(regioneR))
+  CHROM <- "chr1"; N_TIMES <- 1000; N_CORES <- 4; SEED <- 42
+  CHR1_LEN <- 195154279; GENOME_CHR1 <- GRanges(CHROM, IRanges(1, CHR1_LEN))
+
+  restrict_chr1 <- function(gr) {
+    gr <- gr[as.character(seqnames(gr)) == CHROM]
+    GenomeInfoDb::seqlevels(gr, pruning.mode = "coarse") <- CHROM
+    GenomeInfoDb::seqlengths(gr) <- CHR1_LEN
+    gr
+  }
+
+  all_union <- GenomicRanges::reduce(sort(c(gr0, gr1)))
+  cat(sprintf("  Union of all MEF/ESC peaks: %s peaks\n",
+              format(length(all_union), big.mark = ",")))
+
+  all_union_chr <- restrict_chr1(all_union)
+  pqs_chr <- restrict_chr1(pqs_gr)
+
+  set.seed(SEED)
+  res <- regioneR::overlapPermTest(A = all_union_chr, B = pqs_chr, ntimes = N_TIMES,
+           genome = GENOME_CHR1, alternative = "greater", mc.cores = N_CORES, verbose = FALSE)
+  no <- res$numOverlaps
+  p_emp <- (sum(no$permuted >= no$observed) + 1) / (N_TIMES + 1)
+  regioneR_stats <- list(
+    label = "union all MEF/ESC peaks",
+    observed = no$observed,
+    mean_expected = mean(no$permuted),
+    fold = no$observed / mean(no$permuted),
+    zscore = no$zscore,
+    pval = p_emp
+  )
+  cat(sprintf("  [union all peaks] observed=%s  mean=%.1f  fold=%.2fx  z=%.2f  p=%g\n",
+      format(regioneR_stats$observed, big.mark = ","),
+      regioneR_stats$mean_expected, regioneR_stats$fold,
+      regioneR_stats$zscore, regioneR_stats$pval))
+
   p_pqs <- ggplot(bar_mesc_mef, aes(x = cluster, y = pct)) +
-    geom_col(width = 0.6, fill = "#9ecae1", color = "grey30") +
+    geom_col(width = 0.6,
+             fill = c("MEF (cluster 0)" = "#9ecae1",
+                      "mESC (cluster 1)" = "#fc9272",
+                      "shared (both)" = "#bdbdbd"),
+             color = "grey30") +
     geom_text(aes(label = label), vjust = -0.3, size = 3.5, fontface = "bold") +
     scale_y_continuous(limits = c(0, 105),
                        breaks = seq(0, 100, 25),
                        labels = function(x) paste0(x, "%")) +
     labs(x = NULL,
          y = "% of scG4 peaks overlapping >=1 PQS site",
-         title = "MEF/ESC scG4 clusters overlap with PQS") +
+         title = "MEF/ESC scG4 clusters overlap with PQS",
+         subtitle = sprintf("Union of %s peaks vs PQS: %.1fx enrichment (z = %.2f), regioneR permutation p = %s",
+                            format(length(all_union), big.mark = ","),
+                            regioneR_stats$fold, regioneR_stats$zscore,
+                            format.pval(regioneR_stats$pval, digits = 2))) +
     theme_bw(base_size = 12) +
     theme(plot.title    = element_text(face = "bold", size = 13),
+          plot.subtitle = element_text(size = 9, color = "grey30"),
           panel.grid.minor = element_blank(),
           panel.grid.major.x = element_blank())
   
