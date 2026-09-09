@@ -22,6 +22,11 @@ pacman::p_load(
 
 set.seed(5)
 
+script_arg <- commandArgs(trailingOnly = FALSE)
+script_arg <- script_arg[grepl("^--file=", script_arg)]
+SCRIPT_DIR <- dirname(normalizePath(sub("^--file=", "", script_arg[1])))
+ROOT <- dirname(SCRIPT_DIR)
+
 # create parser object
 parser = ArgumentParser()
 
@@ -35,9 +40,9 @@ args = parser$parse_args()
 # work dir for sorted data: "../../results/Seurat/GFP_sorted_mousebrain/res0.8/"
 if (all(sapply(args, is.null))) {
   print("Script is running without sbatch.")
-  g4 = "../../data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds"
-  workdir = "../../results/integration/"
-  rna = "../../data/scRNA-Seq/scRNA_Seq-mouse_brain.Rds"
+  g4 = file.path(ROOT, "data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds")
+  workdir = file.path(SCRIPT_DIR, "results/integration")
+  rna = file.path(ROOT, "data/GSE163484/scRNA_Seq-mouse_brain.Rds")
 } else {
   print("Script is running on cluster via bash script.")
   g4 = args$seurat_object
@@ -46,8 +51,8 @@ if (all(sapply(args, is.null))) {
 }
 
 # make folders for outputs
-system(paste0("mkdir -p ", workdir, "/plots"))
-system(paste0("mkdir -p ", workdir, "/outputs"))
+dir.create(file.path(workdir, "plots"), recursive = TRUE, showWarnings = FALSE)
+dir.create(file.path(workdir, "outputs"), recursive = TRUE, showWarnings = FALSE)
 
 # G4 - scRNA data integration
 # Seurat workflow

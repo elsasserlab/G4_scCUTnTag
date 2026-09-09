@@ -58,6 +58,7 @@ bw_ast    <- import(BW_AST,    as = "RleList")
 bw_nonast <- import(BW_NONAST, as = "RleList")
 pqs <- import(PQS_BED, format = "BED")
 pqs <- pqs[as.character(seqnames(pqs)) %in% CANONICAL]
+pqs <- pqs[!is.na(mcols(pqs)$score) & mcols(pqs)$score >= 50]
 
 gtf <- rtracklayer::import(GTF_PATH)
 genes <- gtf[gtf$type == "gene"]

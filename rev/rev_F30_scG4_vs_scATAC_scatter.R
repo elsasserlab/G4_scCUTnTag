@@ -29,8 +29,8 @@ set.seed(42)
 
 # ----- Paths -----
 ROOT <- normalizePath(getwd())
-DATA <- file.path(ROOT, "github/data")
-OUT_DIR <- file.path(ROOT, "github/rev/outputs/scG4_vs_scATAC")
+DATA <- file.path(ROOT, "data")
+OUT_DIR <- file.path(ROOT, "rev/outputs/scG4_vs_scATAC")
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 # scG4 GFP+ data
@@ -175,12 +175,12 @@ g4_ov_df <- as.data.frame(g4_to_union)
 atac_ov_df <- as.data.frame(atac_to_union)
 
 # Sum G4 signal per union region using aggregate
-g4_signal_by_region <- aggregate(g4_total[g4_ov_df$queryHits + 1] ~ g4_ov_df$subjectHits, FUN = sum)
+g4_signal_by_region <- aggregate(g4_total[g4_ov_df$queryHits] ~ g4_ov_df$subjectHits, FUN = sum)
 colnames(g4_signal_by_region) <- c("region_idx", "signal")
 g4_signal_union[g4_signal_by_region$region_idx] <- g4_signal_by_region$signal
 
 # Sum ATAC signal per union region
-atac_signal_by_region <- aggregate(atac_total[atac_ov_df$queryHits + 1] ~ atac_ov_df$subjectHits, FUN = sum)
+atac_signal_by_region <- aggregate(atac_total[atac_ov_df$queryHits] ~ atac_ov_df$subjectHits, FUN = sum)
 colnames(atac_signal_by_region) <- c("region_idx", "signal")
 atac_signal_union[atac_signal_by_region$region_idx] <- atac_signal_by_region$signal
 
@@ -198,7 +198,7 @@ cat("\n=== Creating scatter plot ===\n")
 intersect_df <- data.frame(
   G4 = g4_signal_intersect,
   ATAC = atac_signal_intersect,
-  category = "Intersection (1:1 matched)"
+  category = "Intersection (overlapping peaks)"
 )
 
 union_df <- data.frame(
@@ -229,14 +229,14 @@ pearson_union <- NA
 spearman_union <- NA
 
 if (nrow(intersect_both) > 10) {
-  pearson_intersect <- cor(intersect_both$G4, intersect_both$ATAC, method = "pearson")
-  spearman_intersect <- cor(intersect_both$G4, intersect_both$ATAC, method = "spearman")
+  pearson_intersect <- cor(log10(intersect_both$G4 + 1), log10(intersect_both$ATAC + 1), method = "pearson")
+  spearman_intersect <- cor(log10(intersect_both$G4 + 1), log10(intersect_both$ATAC + 1), method = "spearman")
   cat(sprintf("  INTERSECTION correlation: Pearson r=%.3f, Spearman ρ=%.3f\n", pearson_intersect, spearman_intersect))
 }
 
 if (nrow(union_all) > 10) {
-  pearson_union <- cor(union_all$G4, union_all$ATAC, method = "pearson")
-  spearman_union <- cor(union_all$G4, union_all$ATAC, method = "spearman")
+  pearson_union <- cor(log10(union_all$G4 + 1), log10(union_all$ATAC + 1), method = "pearson")
+  spearman_union <- cor(log10(union_all$G4 + 1), log10(union_all$ATAC + 1), method = "spearman")
   cat(sprintf("  UNION correlation (all regions): Pearson r=%.3f, Spearman ρ=%.3f\n", pearson_union, spearman_union))
 }
 

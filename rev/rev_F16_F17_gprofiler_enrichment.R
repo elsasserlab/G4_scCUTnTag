@@ -63,7 +63,7 @@ CANONICAL <- c(paste0("chr", 1:19), "chrX", "chrY")
 # ============================================================
 read_peak_gr <- function(path, label) {
   dt <- fread(path)
-  GRanges(seqnames = dt$V1, ranges = IRanges(dt$V2, dt$V3, names = rep(label, nrow(dt))))
+  GRanges(seqnames = dt$V1, ranges = IRanges(dt$V2 + 1L, dt$V3, names = rep(label, nrow(dt))))
 }
 keep_can <- function(gr) gr[as.character(seqnames(gr)) %in% CANONICAL]
 cluster0 <- keep_can(read_peak_gr(CLUSTER_PEAKS_0, "c0"))

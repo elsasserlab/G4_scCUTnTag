@@ -254,9 +254,55 @@ if [[ "$FIG" == "all" || "$FIG" == "--fig2" || "$FIG" == "--fig3" || "$FIG" == "
   download "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE163nnn/GSE163484/suppl/GSE163484_Bartosovic_et_al_annot.csv.gz" \
            "${DATA}/GSE163484/GSE163484_Bartosovic_et_al_annot.csv.gz"
 
+  # The Seurat reference object `scRNA_Seq-mouse_brain.Rds` is NOT available
+  # on GEO (GEO only provides the counts CSV and annotation CSV above). It is a
+  # processed Seurat object provided directly by the study's authors. Ask the
+  # corresponding author for the file.
+  #
+  # TODO: once available, replace the pseudocode below with the real download
+  # URL (e.g. a data-repository/Zenodo link) and enable the line:
+  #
+  # download "<DATA_SERVER_URL>/scRNA_Seq-mouse_brain.Rds" \
+  #          "${DATA}/GSE163484/scRNA_Seq-mouse_brain.Rds"
   echo ""
-  echo "[note] Zeisel et al. neuron data: download loom files from http://mousebrain.org/"
-  echo "       Place at data/Zeisel_et_al/neuron_scRNA_Seq/l2_neurons_*.agg.loom"
+  echo "[note] Bartosovic reference Seurat object (scRNA_Seq-mouse_brain.Rds)"
+  echo "       is author-provided and NOT on GEO. Contact the corresponding"
+  echo "       author of Bartosovic et al. (Nat Biotechnol 2021) to obtain it,"
+  echo "       then place it at ${DATA}/GSE163484/scRNA_Seq-mouse_brain.Rds"
+  echo "       (download link to be added to this script when available)."
+fi
+
+# ======================================================================
+# Zeisel2018: Zeisel et al. mouse nervous system neuron scRNA-seq
+# (Fig 4 neuron reference)
+# ======================================================================
+if [[ "$FIG" == "all" || "$FIG" == "--fig4" ]]; then
+  echo ""
+  echo "--- Zeisel2018: Zeisel neuron scRNA-seq ---"
+
+  # The Seurat neuron object `scRNA_Seq-Zeisel_et_al-neuron.Rds` is NOT
+  # available on GEO. It is a processed Seurat object built by
+  # `data/Zeisel2018/processing_neuron_data.R` from the level-2 neuron loom
+  # files (l2_neurons_*.agg.loom) of the Zeisel et al. (2018) mouse nervous
+  # system atlas (Cell, DOI: 10.1016/j.cell.2018.06.021; http://mousebrain.org).
+  # Those loom files are no longer publicly hosted (mousebrain.org is
+  # offline), so the Rds was received directly from the study's authors.
+  # Contact the corresponding author to obtain it, then place it at
+  # ${DATA}/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds
+  #
+  # TODO: once available, replace the pseudocode below with the real download
+  # URL (e.g. a data-repository/Zenodo link) and enable the line:
+  #
+  # download "<DATA_SERVER_URL>/scRNA_Seq-Zeisel_et_al-neuron.Rds" \
+  #          "${DATA}/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds"
+  echo ""
+  echo "[note] Zeisel neuron Seurat object (scRNA_Seq-Zeisel_et_al-neuron.Rds)"
+  echo "       is author-provided and NOT on GEO (original data: Zeisel et al."
+  echo "       2018, Cell 174:999-1014, DOI: 10.1016/j.cell.2018.06.021;"
+  echo "       mousebrain.org). Contact the corresponding author to obtain"
+  echo "       it, then place it at"
+  echo "       ${DATA}/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds"
+  echo "       (download link to be added to this script when available)."
 fi
 
 # ======================================================================

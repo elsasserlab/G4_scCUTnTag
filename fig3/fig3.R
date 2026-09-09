@@ -7,7 +7,8 @@
 #   B - AST vs non-AST: 2x2 grid (UMAP, full-gene GA volcano, differential
 #       G4 peaks at promoters, scRNA-seq expression volcano)
 #   C - Coverage at astrocyte marker genes
-#   D - Feature plots: Tnik, Pitpnc1, Pbx1, Nwd1 (normalized RNA, viridis)
+#   D - Feature plots: Scarna17, Tmem74, Nwd1, Gli2, Plcl1 (normalized RNA,
+#       viridis; 2.5x text for small/thumbnail reproduction)
 #   E - Cicero browser tracks
 #   S1 - Supplementary: AST-specific G4 peaks intersected with ENCODE4 cCRE
 #       classes (data/genome/cCRE.mm10.bed); horizontal stacked bar with
@@ -481,12 +482,11 @@ if (run_panel("C")) {
   Idents(g4) <- "AST_status"
 
   # ---- Final Panel C: curated showcase genes --------------------------------
-  # Manually selected to showcase different scenarios (AST-up promoter peaks
-  # with GA/RNA support, peak-only hits, and negative controls). Windows span
-  # 10 kb upstream / 35 kb downstream (strand-aware) of each gene's strongest
-  # promoter-proximal peak, falling back to the TSS when no peak exists.
-  sel_genes_c <- c("Plcl1", "Nwd1", "Gli2", "Smad9", "Tmem74", "Gm25493",
-                   "Scarna17", "Acaa2", "Stambpl1", "App", "Rsg1")
+  # The five AST-up promoter-peak genes now highlighted across Fig 3 (SCARNA17,
+  # Tmem74, Nwd1, Gli2, Plcl1). Windows span 10 kb upstream / 35 kb downstream
+  # (strand-aware) of each gene's strongest promoter-proximal peak, falling
+  # back to the TSS when no peak exists.
+  sel_genes_c <- c("Scarna17", "Tmem74", "Nwd1", "Gli2", "Plcl1")
   pk_promo_c <- fread(file.path(OUT, "panel_B_diff_G4peaks_promoters_AST_vs_nonAST.csv"))
   ga_full_c <- fread(file.path(OUT, "panel_B_diff_GA_full_AST_vs_nonAST.csv"))
   rna_dge_c <- fread(file.path(OUT, "panel_B_diff_RNA_AST_vs_nonAST.csv"))
@@ -584,12 +584,12 @@ if (run_panel("C")) {
 }
 
 # ===========================================================================
-# Panel D: Feature plots (Tnik, Pitpnc1, Pbx1, Nwd1) - normalized scRNA-seq
+# Panel D: Feature plots (Scarna17, Tmem74, Nwd1, Gli2, Plcl1) - scRNA-seq
 # ===========================================================================
 if (run_panel("D")) {
   cat("== Panel D: Feature plots ==\n")
 
-  genes <- c("Tnik", "Pitpnc1", "Pbx1", "Nwd1")
+  genes <- c("Scarna17", "Tmem74", "Nwd1", "Gli2", "Plcl1")
   DefaultAssay(rna) <- "RNA"
   norm <- GetAssayData(rna, layer = "data")
 
@@ -598,21 +598,37 @@ if (run_panel("D")) {
   rna_umap_d <- umap_df[Domain == "Bartosovic_scRNA-Seq"]
   rna_umap_d[, barcode := as.character(barcode)]
 
+  # Panel is reproduced very small (thumbnail of the Fig 3 layout), so all
+  # text is scaled 2.5x relative to the shared UMAP theme.
+  UMAP_THEME_D <- theme(
+    plot.title = element_text(size = 40, face = "bold"),
+    axis.text = element_text(size = 27.5, color = "black"),
+    axis.title = element_text(size = 32.5),
+    legend.text = element_text(size = 25),
+    legend.title = element_text(size = 27.5)
+  )
+
   plots <- list()
   for (g in genes) {
+    if (!g %in% rownames(norm)) {
+      warning("Feature plot skipped: ", g, " not found in RNA assay")
+      next
+    }
     keep <- match(rna_umap_d$barcode, colnames(rna))
     keep_ok <- !is.na(keep)
     plot_data <- rna_umap_d[keep_ok, ]
     plot_data[, expr := as.numeric(norm[g, keep[keep_ok]])]
-    plots[[g]] <- ggplot(plot_data, aes(UMAP1, UMAP2, color = expr)) +
-      geom_point_rast(size = 0.8) +
-      scale_color_viridis() +
+    expr_99 <- quantile(plot_data$expr, 0.99, na.rm = TRUE)
+    plots[[g]] <- ggplot(plot_data, aes(UMAP1, UMAP2, color = expr, alpha = expr)) +
+      geom_point_rast(size = 0.28) +
+      scale_color_gradientn(colors = c("lightgray", "red2", "purple4"), limits = c(0, expr_99), oob = scales::squish) +
+      scale_alpha(range = c(0.2, 1), limits = c(0, expr_99), oob = scales::squish, guide = "none") +
       labs(title = g, color = "Expression") +
-      theme_classic() + UMAP_THEME
+      theme_classic() + UMAP_THEME_D
   }
   # Keep the panel on the same co-embedded coordinate system as panel A.
   p_D <- wrap_plots(plots, ncol = 2)
-  save_fig(p_D, "panel_D_featureplots", 14, 12)
+  save_fig(p_D, "panel_D_featureplots", 15.75, 12)
   cat("  Saved panel_D_featureplots.pdf\n")
 }
 
@@ -759,6 +775,11 @@ if (run_panel("S1")) {
   tab_s1[, pct := n / sum(n)]
   setorder(tab_s1, -n)
   fwrite(tab_s1, file.path(OUT, "panel_S1_AST_cCRE_partition.csv"))
+
+  # Export all AST-specific peaks with their cCRE class annotation as 4-column BED
+  rows_s1[, cCRE_class := peak_class_s1]
+  fwrite(rows_s1[, .(chr = V1, start = V2, end = V3, cCRE_class)],
+         file.path(OUT, "panel_S1_AST_specific_peaks_annotated.bed"), sep = "\t")
 
   lvl_s1 <- unique(c(tab_s1$class[tab_s1$class != "No cCRE"], "No cCRE"))
   tab_s1[, class := factor(class, levels = rev(lvl_s1))]

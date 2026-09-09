@@ -12,16 +12,18 @@ Rscript seurat_integration.R
 ```
 
 This creates:
-- `results/integration/outputs/scRNA_Seq_Seurat_object.Rds` (scRNA-seq object)
-- `results/integration/outputs/G4_scRNA_integration.Rds` (integrated G4+scRNA object)
-- `results/integration/outputs/g4_cell_label_preds.Rds` (cell type predictions)
-- `results/integration/outputs/scRNA-Seq-FindAllMarkers_output.tsv` (marker genes)
+- `fig2/results/integration/outputs/scRNA_Seq_Seurat_object.Rds` (scRNA-seq object)
+- `fig2/results/integration/outputs/G4_scRNA_integration.Rds` (integrated G4+scRNA object)
+- `fig2/results/integration/outputs/g4_cell_label_preds.Rds` (cell type predictions)
+- `fig2/results/integration/outputs/scRNA-Seq-FindAllMarkers_output.tsv` (marker genes)
 
-**Note:** These files are gitignored (~1GB total) and must be regenerated locally.
+**Note:** The large Seurat `.Rds` files are gitignored (>100 MiB) and must be
+regenerated locally; the small tables (`anchor_matrix.tsv`,
+`g4_cell_label_preds.Rds`, `scRNA-Seq-FindAllMarkers_output.tsv`) are tracked.
 
 ## Inputs (from data/)
 - `../data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds` - G4 scCUT&Tag data
-- `../data/scRNA-Seq/scRNA_Seq-mouse_brain.Rds` - Bartosovic scRNA-seq reference
+- `../data/GSE163484/scRNA_Seq-mouse_brain.Rds` - Bartosovic scRNA-seq reference
 
 ## Production Script
 After generating intermediates:

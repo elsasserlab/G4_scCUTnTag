@@ -87,6 +87,7 @@ data/GSE291468/*.smooth150.bw
 # ============================================
 data/GSE163484/*.csv.gz
 data/GSE163484/*.Rds
+data/Zeisel2018/*.Rds
 data/GSE198467/*.Rds
 data/GSE149080/*.bw
 data/GSE149080/*.narrowPeak
@@ -151,7 +152,6 @@ Thumbs.db
 # See fig*/README.md for regeneration instructions
 results/
 fig1/results/
-fig2/results/
 fig4/results/
 rev/outputs/
 
@@ -159,4 +159,16 @@ rev/outputs/
 # scBridge: GPU required to regenerate
 # cicero: 1-2 hours to compute coaccessibility
 !fig3/results/
+
+# Exception: Track small Fig2 integration-output tables/objects;
+# the large Seurat .Rds files stay ignored (see fig2/seurat_integration.R)
+!fig2/results/
+fig2/results/*
+!fig2/results/integration/
+fig2/results/integration/*
+!fig2/results/integration/outputs/
+fig2/results/integration/outputs/*
+!fig2/results/integration/outputs/anchor_matrix.tsv
+!fig2/results/integration/outputs/g4_cell_label_preds.Rds
+!fig2/results/integration/outputs/scRNA-Seq-FindAllMarkers_output.tsv
 data/GSE291468/*.smooth150.bw

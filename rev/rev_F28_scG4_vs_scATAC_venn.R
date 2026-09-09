@@ -21,8 +21,8 @@ suppressPackageStartupMessages({
 
 # ----- Paths -----
 ROOT <- normalizePath(getwd())
-DATA <- file.path(ROOT, "github/data")
-OUT_DIR <- file.path(ROOT, "github/rev/outputs/scG4_vs_scATAC")
+DATA <- file.path(ROOT, "data")
+OUT_DIR <- file.path(ROOT, "rev/outputs/scG4_vs_scATAC")
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 # scG4 GFP+ data
@@ -114,7 +114,7 @@ cat(sprintf("  scATAC-only: %s (%.1f%%)\n", format(n_atac_only, big.mark = ","),
 # Create Euler diagram using eulerr (proportional to actual counts)
 # Show region-specific counts within each area
 cat("\nCreating Euler diagram...\n")
-fit <- euler(c("scG4" = n_g4_total, "scATAC" = n_atac_total, "scG4&scATAC" = n_overlap))
+fit <- euler(c("scG4" = n_g4_only, "scATAC" = n_atac_only, "scG4&scATAC" = n_overlap))
 
 p_venn <- plot(fit,
                fills = list(fill = c("#9ecae1", "#fc9272")),

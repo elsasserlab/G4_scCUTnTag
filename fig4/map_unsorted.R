@@ -15,15 +15,20 @@ pacman::p_load(
 
 set.seed(5)
 
+script_arg <- commandArgs(trailingOnly = FALSE)
+script_arg <- script_arg[grepl("^--file=", script_arg)]
+SCRIPT_DIR <- dirname(normalizePath(sub("^--file=", "", script_arg[1])))
+ROOT <- dirname(SCRIPT_DIR)
+
 # result folder
-result_folder = "results/"
+result_folder = file.path(SCRIPT_DIR, "results")
 dir.create(result_folder, showWarnings = FALSE, recursive = TRUE)
 
 # Seurat objects
-rna = "../../data/scRNA-Seq/scRNA_Seq-Zeisel_et_al-neuron.Rds"
-bartosovic_rna = "../../data/scRNA-Seq/scRNA_Seq-mouse_brain.Rds"
-unsorted = readRDS("../../data/GSE291468/GSM8836087_unsorted_Seurat_object.Rds")
-sorted = readRDS("../../data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds")
+rna = file.path(ROOT, "data/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds")
+bartosovic_rna = file.path(ROOT, "data/GSE163484/scRNA_Seq-mouse_brain.Rds")
+unsorted = readRDS(file.path(ROOT, "data/GSE291468/GSM8836087_unsorted_Seurat_object.Rds"))
+sorted = readRDS(file.path(ROOT, "data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds"))
 
 # add labels to sorted cluster
 sorted@meta.data = sorted@meta.data %>% 
