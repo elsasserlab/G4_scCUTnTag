@@ -120,11 +120,15 @@ data/GSE198467/*.bw
 # but we ship the author's version so rev_F28/rev_F30 work out of the box
 data/GSE198467/*.narrowPeak
 !data/GSE198467/GSE198467_atac_consensus_peaks.narrowPeak
+# Bulk ATAC bigWigs + peaks: shipped as-is (author-reprocessed mm10 versions,
+# not regenerable from GEO - GSE149080 publishes mm9 only, no peak calls)
 data/GSE149080/*.bw
 data/GSE149080/*.narrowPeak
+!data/GSE149080/GSM4661960_ATAC_ESC_WT_batch2.rpgc.bw
 !data/GSE149080/GSM4661960_ESC_WT_batch2_peaks.narrowPeak
 data/GSE211123/*.bw
 data/GSE211123/*.narrowPeak
+!data/GSE211123/GSM6451000_ATAC_3T3.rpgc.bw
 !data/GSE211123/GSM6451000_3T3_control_ATAC_peaks.narrowPeak
 data/GSE217860/*.bw
 data/GSE90894/*.xlsx

@@ -60,7 +60,7 @@ github/
 ├── fig2/                   # Figure 2: scRNA-seq integration
 ├── fig3/                   # Figure 3: Astrocyte-specific G4
 ├── fig4/                   # Figure 4: Unsorted brain analysis
-└── rev/                    # Revision supplementary figures
+└── rev/                    # Aditional Figures, mainly revision
 ```
 
 ---
@@ -200,6 +200,15 @@ scripts:
   running Figure 3 (see `fig3/README.md`).
 - **Author-provided Seurat reference objects** (Bartosovic, Zeisel): shipped
   via Git LFS; not available on GEO.
+- **Bulk ATAC-seq bigWigs and peak calls** (GSE149080 mESC, GSE211123 3T3):
+  shipped via Git LFS; NOT re-downloadable from GEO. GSE149080 publishes the
+  mESC track only as an mm9 bigWig while this repository is entirely mm10;
+  the shipped bigWig and narrowPeak are author-reprocessed mm10 versions
+  (re-aligned, MACS2 peak re-calling, RPGC normalization; GEO publishes no
+  peak calls for these samples). The GSE211123 bigWig on GEO is mm10 but was
+  re-processed by the same pipeline, so it also differs from the GEO file.
+  `data/download_data.sh` therefore does not download these files; it only
+  checks that the shipped LFS copies are materialized.
 
 ---
 

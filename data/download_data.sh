@@ -455,11 +455,34 @@ fi
 # ======================================================================
 if [[ "$FIG" == "all" || "$FIG" == "--revisions" ]]; then
   echo ""
-  echo "--- Published bulk ATAC BigWigs ---"
-  download "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4661nnn/GSM4661960/suppl/GSM4661960_ATAC-B2-H33WT.mm9.bw" \
-           "${DATA}/GSE149080/GSM4661960_ATAC_ESC_WT_batch2.rpgc.bw"
-  download "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM6451nnn/GSM6451000/suppl/GSM6451000_3T3-Control-ATAC.bw" \
-           "${DATA}/GSE211123/GSM6451000_ATAC_3T3.rpgc.bw"
+  echo "--- Published bulk ATAC BigWigs (shipped via Git LFS) ---"
+
+  # The bulk ATAC bigWigs and narrowPeak files are SHIPPED with this
+  # repository via Git LFS and are NOT downloaded here, because the GEO
+  # files do not match the data used for the published figures:
+  #   - GSE149080 publishes GSM4661960 only as an mm9 bigWig
+  #     (GSM4661960_ATAC-B2-H33WT.mm9.bw), while everything else in this
+  #     repository is mm10. The shipped bigWig and narrowPeak are
+  #     author-reprocessed mm10 versions (re-aligned and re-called with
+  #     MACS2; GEO publishes no peak calls at all).
+  #   - GSE211123 (GSM6451000) publishes an mm10 bigWig, but the shipped
+  #     copy was re-processed/normalized by the same pipeline, so it also
+  #     differs from the GEO file.
+  # Downloading the GEO files instead would silently replace mm10 data
+  # with wrong-genome (mm9) or differently processed signal.
+  for f in "${DATA}/GSE149080/GSM4661960_ATAC_ESC_WT_batch2.rpgc.bw" \
+           "${DATA}/GSE211123/GSM6451000_ATAC_3T3.rpgc.bw" \
+           "${DATA}/GSE149080/GSM4661960_ESC_WT_batch2_peaks.narrowPeak" \
+           "${DATA}/GSE211123/GSM6451000_3T3_control_ATAC_peaks.narrowPeak"; do
+    if [[ -f "$f" ]] && ! is_lfs_pointer "$f"; then
+      echo "[ok] $(basename "$f") present (shipped via Git LFS)"
+    else
+      echo "[warn] $(basename "$f") missing or still a Git LFS pointer."
+      echo "       Run 'git lfs pull' in the repository root to materialize it."
+      echo "       (These author-processed mm10 files cannot be downloaded from GEO.)"
+      FAILED+=("$f")
+    fi
+  done
 
   echo ""
   echo "--- Published bulk 3T3 G4 CUT&Tag BigWigs ---"

@@ -77,8 +77,8 @@ data/
 ├── GSE163484/                # Bartosovic scRNA-seq (downloaded from GEO)
 ├── Zeisel2018/               # Zeisel neuron scRNA-seq Rds + processing script (author-provided)
 ├── GSE198467/                # Brain snATAC-seq (downloaded from GEO)
-├── GSE149080/                # mESC ATAC-seq (bigWig downloaded; narrowPeak shipped)
-├── GSE211123/                # 3T3 ATAC-seq (bigWig downloaded; narrowPeak shipped)
+├── GSE149080/                # mESC ATAC-seq (bigWig + narrowPeak shipped, author-reprocessed mm10)
+├── GSE211123/                # 3T3 ATAC-seq (bigWig + narrowPeak shipped, author-reprocessed mm10)
 ├── GSE217860/                # 3T3 G4 CUT&Tag (downloaded from GEO)
 └── GSE90894/                 # Chronis mESC/MEF RNA-seq table (downloaded from GEO)
 ```
@@ -103,8 +103,13 @@ Our scG4 CUT&Tag data from three experiments:
   (`GSE198467_ATAC_fragments.tsv.gz`, downloaded from GEO, gitignored) by
   `data/GSE198467/reprocess_atac_peaks.sh` (MACS2, q=1e-6, ~93k peaks):
   `GSE198467_atac_consensus_peaks.narrowPeak`.
-- **GSE149080**: mESC ATAC-seq (bulk reference; RPGC bigWig downloaded, narrowPeak shipped because GEO has no peak file)
-- **GSE211123**: 3T3 ATAC-seq (bulk reference; RPGC bigWig downloaded, narrowPeak shipped because GEO has no peak file)
+- **GSE149080**: mESC ATAC-seq (bulk reference). The bigWig and narrowPeak
+  are SHIPPED via Git LFS: GEO publishes only an mm9 bigWig for GSM4661960
+  (this repository is mm10) and no peak calls. The shipped files are
+  author-reprocessed mm10 versions and cannot be downloaded from GEO.
+- **GSE211123**: 3T3 ATAC-seq (bulk reference). The bigWig and narrowPeak
+  are SHIPPED via Git LFS; the shipped bigWig was re-processed/normalized
+  with the same pipeline as GSE149080 and differs from the GEO file.
 - **GSE217860**: 3T3 G4 CUT&Tag (bulk reference)
 - **GSE90894**: Chronis mESC/MEF RNA-seq table
 
@@ -148,6 +153,7 @@ These files are tracked by git and synced when you clone the repo:
 - **PQS predictions** (`pqsfinder/`, ~407M): Genome-wide PQS scores (bed + bigWig)
 - **GSE291468 auxiliary tables** (~0.25M): scBridge cell-group barcodes and Seurat cluster barcodes
 - **Bulk ATAC narrowPeaks** (~11M): GSE149080 and GSE211123 peak calls used by Fig 1 and revision F18 (not distributed by GEO)
+- **Bulk ATAC bigWigs** (~226M): GSE149080 and GSE211123 RPGC tracks (author-reprocessed mm10 versions; see below)
 - **Corrected bigWigs** (~158M): 9 GSM8836086 bigWigs with duplicates removed
 - **Scripts**: `download_data.sh`, `regenerate_bigwigs.sh`, `filter_pqs.sh`, etc.
 
@@ -156,8 +162,6 @@ Run `bash download_data.sh` to download these before generating figures:
 
 - **GSE163484**: Bartosovic scRNA-seq (counts CSV + annotation CSV)
 - **GSE198467**: Brain snATAC-seq
-- **GSE149080**: mESC ATAC-seq RPGC bigWig (narrowPeak is shipped)
-- **GSE211123**: 3T3 ATAC-seq RPGC bigWig (narrowPeak is shipped)
 - **GSE217860**: 3T3 G4 CUT&Tag
 - **GSE90894**: Chronis RNA-seq table
 - **GSE291468**: Most bigWigs, Seurat objects, narrowPeak files
