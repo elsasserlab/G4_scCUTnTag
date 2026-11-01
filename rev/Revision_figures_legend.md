@@ -1,8 +1,6 @@
-# Revision Figures — Legend and Derivation Notes
+# Additional Figures — Legend and Derivation Notes
 
-The revision/rebuttal panels answer reviewer questions about G4 signal reproducibility, functional annotation, independence from chromatin accessibility, and QC of the neural datasets. Each panel produced by R scripts under `rev/`.
-
-**Note on permutation z-scores:** the regioneR permutation tests (`permTest`) are run in parallel (`mc.cores > 1`). The random permutation stream is therefore not fully deterministic across runs/machines, and reported z-scores can vary slightly (observed/expected ratios and resolution-limited P-values, ~P<=0.001, are stable). The z-scores in the CSVs are approximate.
+Additional Figures. Each panel produced by R scripts under `rev/`.
 
 ## Shared data sources
 
@@ -44,3 +42,5 @@ The revision/rebuttal panels answer reviewer questions about G4 signal reproduci
 chromosome-distribution and published per-cell QC metrics for the third-party
 GSM5501245 (SINAG1, U2OS/MCF7) dataset and compares them with the ESC-MEF data.
 These QC plots support the revision but are not assigned an F-number.
+
+**Note on permutation z-scores:** the regioneR permutation tests (`permTest`) are run in parallel (`mc.cores > 1`). The random permutation stream is therefore not fully deterministic across runs/machines, and reported z-scores can vary slightly (observed/expected ratios and resolution-limited P-values, ~P<=0.001, are stable). The z-scores in the CSVs are approximate.
