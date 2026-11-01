@@ -21,26 +21,22 @@ This downloads ~2GB of data from GEO (accession GSE291468 and references).
 
 ### 2. Generate Figures
 
+Run all commands from the repository root (`fig1/fig1.R` and `fig2/fig2.R` resolve paths from the working directory).
+
 ```bash
 # Figure 1: mESC-MEF G4 CUT&Tag analysis
 Rscript fig1/fig1.R
 
 # Figure 2: Integration with scRNA-seq reference
-cd fig2
-Rscript seurat_integration.R  # Generate intermediates first
-Rscript fig2.R
-cd ..
+Rscript fig2/seurat_integration.R  # Generate intermediates first
+Rscript fig2/fig2.R
 
 # Figure 3: Astrocyte-specific G4 patterns
-cd fig3
-Rscript fig3.R
-Rscript cicero.R  # Optional: coaccessibility analysis
-cd ..
+Rscript fig3/fig3.R
+Rscript fig3/cicero.R  # Optional: coaccessibility analysis
 
 # Figure 4: Unsorted brain neuronal analysis
-cd fig4
-Rscript fig4.R
-cd ..
+Rscript fig4/fig4.R
 ```
 
 ---
@@ -82,8 +78,8 @@ github/
 | --- | --- | --- | --- |
 | Fig. 1 | `fig1/fig1.R` | `fig1/seurat_workflow.R` | mESC-MEF UMAP, QC, Venn, PCA, heatmap, correlation, tracks |
 | Fig. 2 | `fig2/fig2.R` | `fig2/seurat_integration.R` | Brain integration UMAP, prediction scores, overlap, markers |
-| Fig. 3 | `fig3/fig3.R` | `fig3/cicero.R`, `fig3/scbridge_input.R` | scBridge UMAP, Cicero tracks |
-| Fig. 4 | `fig4/fig4.R` | `fig4/map_unsorted.R`, `fig4/processing_neuron_data.R` | Unsorted brain mapping |
+| Fig. 3 | `fig3/fig3.R` | `fig3/cicero.R` | scBridge UMAP (shipped), Cicero tracks |
+| Fig. 4 | `fig4/fig4.R` | `fig4/map_unsorted.R`, `data/Zeisel2018/processing_neuron_data.R` | Unsorted brain mapping |
 
 ### Additional Figures
 
@@ -125,37 +121,58 @@ Our scG4 CUT&Tag data from three experiments:
 |--------|---------------|-----------|------|
 | **Fig. 1** | GSM8836088 (mESC-MEF)<br>GSM8836082/84 (bulk controls) | `GSM8836088_mESCMEF_Seurat_object.Rds`<br>`GSM8836088_cluster_{0,1}_peaks.narrowPeak`<br>`GSM8836082/84_bulkG4CnT_*.bw` | mESC-MEF UMAP/QC, cluster-vs-bulk overlaps, marker PCA, RPGC heatmaps, correlation, browser tracks |
 | **Fig. 2** | GSM8836086 (sorted GFP+)<br>GSE163484 (scRNA reference) | `GSM8836086_GFPpos_Seurat_object.Rds`<br>`scRNA_Seq-mouse_brain.Rds`<br>`fig2/results/integration/outputs/` | CCA co-embedding, transferred cell labels, prediction scores, overlap scores, marker violins, RNA/G4 feature plots |
-| **Fig. 3** | GSM8836086 (sorted GFP+)<br>GSE163484 (scRNA reference) | `results/scBridge/umap_coembedded.csv`<br>`scbridge_predictions.csv`<br>`GSM8836086_Predicted_Astrocytes_RPGC.bw` | scBridge embedding, AST differential G4, AST coverage, RNA feature plots, reliability analyses |
+| **Fig. 3** | GSM8836086 (sorted GFP+)<br>GSE163484 (scRNA reference) | `fig3/results/scBridge/umap_coembedded.csv`<br>`fig3/results/scBridge/scbridge_predictions.csv`<br>`GSM8836086_Predicted_Astrocytes_RPGC.bw` | scBridge embedding, AST differential G4, AST coverage, RNA feature plots, reliability analyses |
 | **Fig. 3E** | Derived from sorted GFP+ | `fig3/results/cicero/cicero_GFPsorted-{predAST,pred_nonAST}.Rds`<br>`GSM8836086_Predicted_{Astrocytes,non-Astrocytes}_RPGC.bw`<br>`PQS_scores.mm10.bw`<br>`data/cCRE/` | Directly generated Cicero co-accessibility browser tracks for five G4 loci |
 | **Fig. 4** | GSM8836087 (unsorted)<br>GSM8836086 (sorted reference) | `GSM8836087_unsorted_Seurat_object.Rds`<br>`GSM8836087_unsorted_cluster_{0,1}_peaks.narrowPeak` | Query-to-reference mapping, mapped labels, prediction scores, peak-overlap Venn |
 | **Fig. 4C** | GSM8836087 (unsorted clusters) | `GSM8836087_cluster{0,1}_RPGC.bw`<br>`GSM8836086_GFP_sorted_mousebrain.rpgc.bw`<br>`PQS_scores.mm10.bw` | RPGC signal profiles/heatmaps for cluster-specific peaks, PQS score profiles |
 | **Fig. 4D** | GSM8836087 (unsorted) | `GSM8836087_unsorted_cluster_{0,1}_peaks.narrowPeak` | Nearest-gene annotation and enrichR GO Biological Process analysis |
-| **Fig. 4F-G** | GSM8836087 + Zeisel neuron reference | `results/scBridge/output/unsorted_cl1_Zeisel/`<br>`Zeisel_et_al-neuron.Rds` | Precomputed scBridge neuron integration UMAP and neuron-type treemap |
+| **Fig. 4F-G** | GSM8836087 + Zeisel neuron reference | `fig4/results/scBridge/`<br>`Zeisel_et_al-neuron.Rds` | Precomputed scBridge neuron integration UMAP and neuron-type treemap |
 
 ---
 
 ## Software Requirements
 
-### R Packages
+### Recommended: conda environment + R package installer
 
-```r
-# Core packages
-install.packages(c("Seurat", "Signac", "tidyverse", "data.table", "glue"))
-
-# Bioconductor packages
-if (!require("BiocManager"))
-  install.packages("BiocManager")
-BiocManager::install(c("rtracklayer", "GenomicRanges", "EnsDb.Mmusculus.v79"))
-
-# Additional packages
-install.packages(c("cowplot", "ggpubr", "ComplexHeatmap", "circlize", "argparse"))
+```bash
+conda env create -f environment.yml
+conda activate scg4
+Rscript install_dependencies.R
 ```
 
-### System Requirements
+`environment.yml` provides R and the command-line tools used by the pipeline
+(deepTools, bedtools, samtools, MACS2, tabix). `install_dependencies.R` installs
+the remaining CRAN, Bioconductor and GitHub R packages.
 
-- **R** >= 4.0
-- **Python** >= 3.7 (for scBridge, optional)
-- **GPU** (CUDA) - only if regenerating scBridge integration
+`data/GSE291468/regenerate_bigwigs.sh` and `data/GSE198467/make_atac_bigwig.sh`
+activate the conda environment named `scg4` by default. Override with
+`CONDA_ENV=<name>` if you use a different environment. `fig1/fig1_deeptools.R`
+uses deepTools from `PATH`; set `DEEPTOOLS_BIN=/path/to/deeptools/bin` if they are
+not on `PATH`.
+
+### R packages installed by `install_dependencies.R`
+
+- CRAN: Seurat, Signac, tidyverse, data.table, glue, argparse, cowplot, ggpubr,
+  ggrepel, ggrastr, patchwork, viridis, scales, RColorBrewer, readxl, gridExtra,
+  ggplotify, eulerr, VennDiagram, hrbrthemes, Matrix, pacman
+- Bioconductor: GenomicRanges, IRanges, GenomeInfoDb, GenomicFeatures, rtracklayer,
+  BSgenome, BSgenome.Mmusculus.UCSC.mm10, EnsDb.Mmusculus.v79, org.Mm.eg.db,
+  TxDb.Mmusculus.UCSC.mm10.knownGene, ChIPseeker, pqsfinder, ComplexHeatmap,
+  circlize, Gviz, regioneR, cicero, monocle3
+- GitHub: cnluzon/wigglescout, cnluzon/bedscout, egeulgen/DoubletFinder
+
+### Command-line tools
+
+- deepTools (`computeMatrix`, `plotHeatmap`, `bamCoverage`)
+- bedtools, samtools, MACS2, tabix/htslib
+- `curl` and `gzip` (for `data/download_data.sh`)
+
+### Other requirements
+
+- **R** >= 4.3 (tested with R 4.4)
+- No scBridge installation, Python environment or GPU is required; all
+  scBridge-derived inputs used by Figures 3 and 4 are shipped precomputed
+- Internet access for the Enrichr web API (Fig. 1G, 4D and rev F25)
 
 ---
 
@@ -166,9 +183,8 @@ install.packages(c("cowplot", "ggpubr", "ComplexHeatmap", "circlize", "argparse"
 Before running `fig2.R`, you must generate integration objects:
 
 ```bash
-cd fig2
-Rscript seurat_integration.R  # ~30-60 minutes
-Rscript fig2.R                # ~10-20 minutes
+Rscript fig2/seurat_integration.R  # ~30-60 minutes
+Rscript fig2/fig2.R                # ~10-20 minutes
 ```
 
 See `fig2/README.md` for details.
@@ -176,17 +192,13 @@ See `fig2/README.md` for details.
 ### Figure 3: scBridge Integration
 
 scBridge is a neural network-based single-cell multi-omics integration tool that leverages data heterogeneity ([Yunfan Li et al., 2023](https://www.nature.com/articles/s41467-023-41795-5)).
+scBridge is **not** a dependency of this repository and does not need to be
+installed or run: every scBridge-derived input is shipped precomputed.
 
-**Installation:** [scBridge GitHub](https://github.com/XLearning-SCU/scBridge)
+- Fig. 3: `fig3/results/scBridge/*.csv`
+- Fig. 4F-G: `fig4/results/scBridge/*.pdf`
 
-**Note:** scBridge requires a single GPU for training.
-
-The scBridge outputs in `fig3/results/scBridge/` are shipped with the repository because:
-- scBridge requires GPU for training
-- Files are small (~840KB total)
-- Regeneration takes ~1 hour with GPU
-
-See `fig3/results/scBridge/README.md` for regeneration instructions.
+No GPU, Python scBridge environment or model weights are required.
 
 ### Figure 3: Cicero Analysis
 
@@ -233,15 +245,13 @@ Lyu, T., et al. (2025). "Single-cell G-quadruplex CUT&Tag reveals astrocyte-spec
 ### Step 1: Download Data
 
 ```bash
-cd data
-bash download_data.sh
+bash data/download_data.sh
 # or download specific figures:
-bash download_data.sh --fig1
-bash download_data.sh --fig2
-bash download_data.sh --fig3
-bash download_data.sh --fig4
-bash download_data.sh --revisions
-cd ..
+bash data/download_data.sh --fig1
+bash data/download_data.sh --fig2
+bash data/download_data.sh --fig3
+bash data/download_data.sh --fig4
+bash data/download_data.sh --revisions
 ```
 
 This downloads ~2GB of GEO data files.
@@ -251,11 +261,7 @@ This downloads ~2GB of GEO data files.
 Updated bigWigs (include PCR duplicate removal) are already bundled in `data/GSE291468/`. Only regenerate if needed:
 
 ```bash
-cd data/GSE291468
-bash regenerate_bigwigs.sh
-# or submit to cluster (recommended):
-sbatch regenerate_bigwigs.sbatch
-cd ../..
+bash data/GSE291468/regenerate_bigwigs.sh
 ```
 
 ### Step 3: Generate Figures
@@ -263,10 +269,10 @@ cd ../..
 ```bash
 # Main figures
 Rscript fig1/fig1.R
+Rscript fig2/seurat_integration.R
 Rscript fig2/fig2.R
 Rscript fig3/fig3.R
 Rscript fig4/fig4.R
-
 ```
 
 ---
@@ -274,14 +280,13 @@ Rscript fig4/fig4.R
 ## Troubleshooting
 
 ### R package errors
-Install required packages:
-```r
-install.packages(c("Seurat", "Signac", "ggplot2", "ComplexHeatmap", "GenomicRanges"))
-# See individual scripts for full package lists
+Install all required packages with:
+```bash
+Rscript install_dependencies.R
 ```
+See `README.md#software-requirements` for the full package list.
 
 ### scBridge errors
-scBridge requires GPU and is precomputed. Use the CSV outputs from `fig3/results/scBridge/`:
-- `umap_coembedded.csv`
-- `scbridge_predictions.csv`
-- `scbridge_reliability.csv`
+scBridge is not required. The inputs used by the figures are shipped in
+`fig3/results/scBridge/` and `fig4/results/scBridge/`; if they are missing,
+re-clone or re-download the repository.

@@ -1,0 +1,15 @@
+name: scg4
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base>=4.3
+  - r-biocmanager
+  - r-remotes
+  - r-devtools
+  - deeptools
+  - bedtools
+  - samtools
+  - macs2
+  - htslib
+  - curl

@@ -1,3 +1,7 @@
+# Provenance only: prepares inputs for the external scBridge tool.
+# scBridge is not required to reproduce any figure; the outputs are shipped
+# in fig3/results/scBridge/. This script is not part of the figure pipeline.
+
 if (!require("pacman"))
   install.packages("pacman")
 pacman::p_load("Seurat", "glue", "tidyverse", "data.table"

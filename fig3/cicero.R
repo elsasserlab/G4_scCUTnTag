@@ -57,7 +57,7 @@ prediction_path <- file.path(
   SCRIPT_DIR, "results", "scBridge", "scbridge_predictions.csv"
 )
 if (!file.exists(g4_path) || !file.exists(prediction_path)) {
-  stop("Missing Cicero input. Run download_data.sh --fig3 and verify scBridge outputs.")
+  stop("Missing Cicero input. Verify that fig3/results/scBridge/scbridge_predictions.csv is present (shipped with the repository).")
 }
 
 cat("Loading GFP+ G4 object and scBridge predictions...\n")

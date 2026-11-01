@@ -7,8 +7,7 @@ This figure shows integration of scG4 CUT&Tag data with scRNA-seq reference usin
 Before running `fig2.R`, you must generate the integrated Seurat objects:
 
 ```bash
-cd fig2
-Rscript seurat_integration.R
+Rscript fig2/seurat_integration.R
 ```
 
 This creates:
@@ -22,13 +21,13 @@ regenerated locally; the small tables (`anchor_matrix.tsv`,
 `g4_cell_label_preds.Rds`, `scRNA-Seq-FindAllMarkers_output.tsv`) are tracked.
 
 ## Inputs (from data/)
-- `../data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds` - G4 scCUT&Tag data
-- `../data/GSE163484/scRNA_Seq-mouse_brain.Rds` - Bartosovic scRNA-seq reference
+- `data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds` - G4 scCUT&Tag data
+- `data/GSE163484/scRNA_Seq-mouse_brain.Rds` - Bartosovic scRNA-seq reference
 
 ## Production Script
 After generating intermediates:
 ```bash
-Rscript fig2.R
+Rscript fig2/fig2.R
 ```
 
 ## Outputs

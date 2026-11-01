@@ -36,13 +36,14 @@ args = parser$parse_args()
 # add working directory
 # e.g. "results/seurat_mESC_MEF/" or "results/seurat_unsorted_mousebrain_res0.8/"
 # add path to CellRanger output folder
-# e.g. "../../data/GSE291468/GSM8836088_mESC_MEF/CellRanger/"
+# e.g. "data/GSE291468/GSM8836088_mESC_MEF/CellRanger/"
 # cluster resolution (0.1 or 0.8 were used)
+ROOT <- normalizePath(getwd())
 if (all(sapply(args, is.null))) {
-  print("Script is running without sbatch.")
+  print("Script is running interactively (run from repo root).")
   res = 0.1
-  workdir = "results/seurat_unsorted_res0.1/"
-  cell_ranger = "../../data/GSE291468/GSM8836087_unsorted_mouse_brain/CellRanger/"
+  workdir = file.path(ROOT, "results/seurat_unsorted_res0.1/")
+  cell_ranger = file.path(ROOT, "data/GSE291468/GSM8836087_unsorted_mouse_brain/CellRanger/")
   sample = "unsorted"
 } else {
   print("Script is running on cluster via bash script.")
@@ -60,7 +61,15 @@ system(paste0("mkdir -p ", workdir, "/plots"))
 system(paste0("mkdir -p ", workdir, "/outputs"))
 
 # read into Seurat
-counts = Read10X_h5(filename = glue("{cell_ranger}filtered_peak_bc_matrix.h5"))
+matrix_candidates = file.path(
+  cell_ranger,
+  c("filtered_peak_bc_matrix.h5", "raw_peak_matrix.h5", "raw_peak_bc_matrix.h5")
+)
+matrix_file = matrix_candidates[file.exists(matrix_candidates)][1]
+if (is.na(matrix_file)) {
+  stop("No peak-barcode matrix (.h5) found in ", cell_ranger)
+}
+counts = Read10X_h5(filename = matrix_file)
 metadata = read.csv(
   file = glue("{cell_ranger}singlecell.csv"),
   header = TRUE,
@@ -95,7 +104,7 @@ seurat = RunUMAP(object = seurat,
 
 # find doublets using DoubletFinder
 doublet_test = Seurat::Read10X_h5(
-  filename = glue("{cell_ranger}/filtered_peak_bc_matrix.h5"),
+  filename = matrix_file,
   use.names = T
 )
 doublet_test = CreateSeuratObject(doublet_test, project = "G4 scC&T")

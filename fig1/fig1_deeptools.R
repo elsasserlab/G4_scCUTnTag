@@ -5,8 +5,8 @@
 # Compute deepTools computeMatrix + plotHeatmap for 6 bigwigs
 # over the 3 peak categories from Panel F (cl0-only, shared, cl1-only).
 #
-# Requires the deeptools conda env:
-#   /home/fr/fr_fr/fr_se1100/.conda/envs/deeptools
+# Requires deepTools (computeMatrix, plotHeatmap) on PATH, or set
+# DEEPTOOLS_BIN to the directory containing those executables.
 #
 # Run from repo root:
 #   Rscript fig1/fig1_deeptools.R
@@ -22,7 +22,10 @@ DATA <- file.path(ROOT, "data")
 OUT  <- file.path(ROOT, "fig1", "outputs", "deeptools")
 dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
 
-DEEPTOOLS <- "/home/fr/fr_fr/fr_se1100/.conda/envs/deeptools/bin"
+DEEPTOOLS <- Sys.getenv("DEEPTOOLS_BIN", unset = "")
+deeptools_bin <- function(tool) {
+  if (nzchar(DEEPTOOLS)) file.path(DEEPTOOLS, tool) else tool
+}
 
 # --- Step 1: Generate 3 peak categories (same as Panel F) ---
 cat("== Generating peak categories ==\n")
@@ -86,7 +89,7 @@ for (info in bw_info) {
   # computeMatrix
   cmd_mat <- sprintf(
     paste(
-      "%s/computeMatrix reference-point",
+      "%s reference-point",
       "-S '%s'",
       "-R '%s' '%s' '%s'",
       "-b 3000 -a 3000",
@@ -94,15 +97,15 @@ for (info in bw_info) {
       "--samplesLabel '%s'",
       "-o '%s'"
     ),
-    DEEPTOOLS, info$bw, bed_cl0, bed_shared, bed_cl1,
+    deeptools_bin("computeMatrix"), info$bw, bed_cl0, bed_shared, bed_cl1,
     info$label, mat_file
   )
   system(cmd_mat, intern = TRUE)
 
   # Compute 90th percentile zmax from the matrix for color scale capping
   zmax_cmd <- sprintf(
-    "%s/Rscript -e 'm <- read.table(gzfile(\"%s\"), skip=1, comment.char=\"@\"); cat(quantile(as.matrix(m), 0.90, na.rm=TRUE), \"\\n\")'",
-    DEEPTOOLS, mat_file
+    "Rscript -e 'm <- read.table(gzfile(\"%s\"), skip=1, comment.char=\"@\"); cat(quantile(as.matrix(m), 0.90, na.rm=TRUE), \"\\n\")'",
+    mat_file
   )
   zmax_val <- as.numeric(system(zmax_cmd, intern = TRUE)[1])
   zmax_val <- round(zmax_val, 1)
@@ -111,7 +114,7 @@ for (info in bw_info) {
   # plotHeatmap
   cmd_plot <- sprintf(
     paste(
-      "%s/plotHeatmap -m '%s'",
+      "%s -m '%s'",
       "-out '%s'",
       "--refPointLabel 'peak'",
       "--heatmapHeight 14",
@@ -122,7 +125,7 @@ for (info in bw_info) {
       "--yAxisLabel '' --xAxisLabel ''",
       "--legendLocation 'none'"
     ),
-    DEEPTOOLS, mat_file, pdf_file, zmax_val
+    deeptools_bin("plotHeatmap"), mat_file, pdf_file, zmax_val
   )
   system(cmd_plot, intern = TRUE)
   cat("    Saved", basename(pdf_file), "\n")

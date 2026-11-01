@@ -5,12 +5,15 @@
 #   - scG4 MEF/ESC: cluster 0 (MEF), cluster 1 (mESC)
 #   - Mouse brain GFP+: clusters 0, 1, 2
 #   - Mouse brain unsorted: clusters 0, 1
+#   - GSE198467 GFP+ sorted scATAC (nano-CT ATAC modality): consensus MACS2
+#     peaks re-called from raw fragments (see data/GSE198467/reprocess_atac_peaks.sh)
 #
 # Output:
 #   R_outputs/PQS_venn_diagrams/
 #     - bar_pct_peaks_overlap_PQS_MEF_ESC_scG4.pdf
 #     - bar_pct_peaks_overlap_PQS_mousebrain_GFPpos.pdf
 #     - bar_pct_peaks_overlap_PQS_mousebrain_unsorted.pdf
+#     - bar_pct_peaks_overlap_PQS_scATAC_GSE198467_GFPsorted.pdf
 #     - overlap_counts.csv  (all scG4 datasets)
 #     - venn_*.pdf  (individual Venn diagrams)
 #     - permTest_summary.csv
@@ -141,12 +144,77 @@ mb_uns_c1 <- import(MB_UNS_CLUST1, format = "narrowPeak")
 mb_uns_c1 <- mb_uns_c1[as.character(seqnames(mb_uns_c1)) %in% CANONICAL]
 cat(sprintf("  Unsorted cluster 1 peaks: %s\n", format(length(mb_uns_c1), big.mark = ",")))
 
+cat("\nLoading GSE198467 GFP+ sorted scATAC peaks (MACS2 re-called)...\n")
+ATAC_NARROWPEAK <- file.path(GSE198467, "GSE198467_atac_consensus_peaks.narrowPeak")
+stopifnot(file.exists(ATAC_NARROWPEAK))
+atac_peaks_raw <- import(ATAC_NARROWPEAK, format = "narrowPeak")
+atac_peaks_raw <- atac_peaks_raw[as.character(seqnames(atac_peaks_raw)) %in% CANONICAL]
+cat(sprintf("  GSE198467 ATAC peaks (canonical, raw): %s (mean width %.0f bp, median %d bp)\n",
+            format(length(atac_peaks_raw), big.mark = ","),
+            mean(width(atac_peaks_raw)), median(width(atac_peaks_raw))))
+
+# ---------------------------------------------------------------------
+# Resize scATAC peaks to the median width of the scG4 GFP+ union, centered
+# on the narrowPeak summit (column 10, 0-based offset from chromStart).
+# Wide peaks inflate % overlap with PQS, skewing the scATAC vs scG4 bar
+# comparison; equalizing widths makes the bars comparable.
+# The target width is computed on the fly from the scG4 GFP+ peaks.
+# ---------------------------------------------------------------------
+cat("Rescaling scATAC peaks to match scG4 median ...\n")
+g4_gfp_union <- reduce(c(mb_gfp_c0, mb_gfp_c1, mb_gfp_c2), ignore.strand = TRUE)
+g4_gfp_union <- g4_gfp_union[as.character(seqnames(g4_gfp_union)) %in% CANONICAL]
+
+#g4_width <- as.integer(median(width(g4_gfp_union)))
+#atac_width <- as.integer(median(width(atac_peaks_raw)))
+#cat(sprintf("  scG4 GFP+ union: %s peaks, median width %d bp (resize target), mean width %d bp\n",
+#            format(length(g4_gfp_union), big.mark = ","), g4_width, as.integer(mean(width(g4_gfp_union)))))
+
+#scale_width <- function(gr, scalefactor) {
+#  center <- (start(gr) - end(gr))/2
+#  orig_width <- width(gr)          # center
+#  reduce_width <- as.integer(floor(orig_width*(1-scalefactor)/2))
+  #half   <- as.integer(floor(target_w / 2))
+#  out <- GRanges(seqnames(gr), IRanges(start(gr) + reduce_width,
+#                                       end(gr) - reduce_width))
+#  seqlengths(out) <- seqlengths(gr)
+#  trim(out)
+#}
+#atac_peaks <- scale_width(atac_peaks_raw, g4_width/atac_width)
+
+#cat(sprintf("  GSE198467 ATAC peaks (summit-resized, width %d bp): %s (median width %.0f bp, mean width %.0f bp)\n",
+#            g4_width, format(length(atac_peaks), big.mark = ","),
+#            median(width(atac_peaks)),mean(width(atac_peaks))))
+
+#SUM_CENTER_BP <- as.integer(median(width(g4_gfp_union)))
+#cat(sprintf("  scG4 GFP+ union: %s peaks, median width %d bp (resize target)\n",
+#            format(length(g4_gfp_union), big.mark = ","), SUM_CENTER_BP))
+#
+#resize_around_summit <- function(gr, target_w) {
+#  summit <- start(gr) - 1L + mcols(gr)$peak          # 1-based genomic summit
+#  half   <- as.integer(floor(target_w / 2))
+#  out <- GRanges(seqnames(gr), IRanges(summit - half,
+#                                       summit - half + target_w - 1L))
+#  seqlengths(out) <- seqlengths(gr)
+#  trim(out)
+#}
+#atac_peaks <- resize_around_summit(atac_peaks_raw, SUM_CENTER_BP)
+
+#cat(sprintf("  GSE198467 ATAC peaks (summit-resized, width %d bp): %s (mean width %.0f bp)\n",
+#            SUM_CENTER_BP, format(length(atac_peaks), big.mark = ","),
+#            mean(width(atac_peaks))))
+
+# No adjustment of width, regioneR takes width into account
+atac_peaks <- atac_peaks_raw
+rm(atac_peaks_raw)
+
+
 cat("\nComputing mouse brain overlap counts...\n")
 oc_mb_gfp_c0 <- overlap_counts(mb_gfp_c0, pqs, "Mouse brain GFP+ cluster 0")
 oc_mb_gfp_c1 <- overlap_counts(mb_gfp_c1, pqs, "Mouse brain GFP+ cluster 1")
 oc_mb_gfp_c2 <- overlap_counts(mb_gfp_c2, pqs, "Mouse brain GFP+ cluster 2")
 oc_mb_uns_c0 <- overlap_counts(mb_uns_c0, pqs, "Mouse brain unsorted cluster 0")
 oc_mb_uns_c1 <- overlap_counts(mb_uns_c1, pqs, "Mouse brain unsorted cluster 1")
+oc_atac <- overlap_counts(atac_peaks, pqs, "GSE198467 GFP+ sorted scATAC")
 
 print_oc <- function(oc) {
   cat(sprintf("  %s\n", oc$label))
@@ -168,6 +236,8 @@ cat("\n=== Mouse brain GFP+ ===\n")
 print_oc(oc_mb_gfp_c0); print_oc(oc_mb_gfp_c1); print_oc(oc_mb_gfp_c2)
 cat("\n=== Mouse brain unsorted ===\n")
 print_oc(oc_mb_uns_c0); print_oc(oc_mb_uns_c1)
+cat("\n=== GSE198467 GFP+ sorted scATAC ===\n")
+print_oc(oc_atac)
 
 # ----- regioneR analysis: per-dataset (not per-cluster) -----
 cat("\n=== regioneR analysis (per dataset, chr1, 1000 permutations) ===\n")
@@ -183,18 +253,38 @@ restrict_chr1 <- function(gr) {
 }
 
 # Combine peaks by dataset category
-c_mesc_combined <- c(c0, c1)
-mb_gfp_combined <- c(mb_gfp_c0, mb_gfp_c1, mb_gfp_c2)
-mb_uns_combined <- c(mb_uns_c0, mb_uns_c1)
+#c_mesc_combined <- c(c0, c1)
+c_mesc_combined <- reduce(c(c0, c1), ignore.strand = TRUE)
+c_mesc_combined <- c_mesc_combined[as.character(seqnames(c_mesc_combined)) %in% CANONICAL]
+
+
+#mb_gfp_combined <- c(mb_gfp_c0, mb_gfp_c1, mb_gfp_c2)
+mb_gfp_combined <- reduce(c(mb_gfp_c0, mb_gfp_c1, mb_gfp_c2), ignore.strand = TRUE)
+mb_gfp_combined <- mb_gfp_combined[as.character(seqnames(mb_gfp_combined)) %in% CANONICAL]
+
+#mb_uns_combined <- c(mb_uns_c0, mb_uns_c1)
+mb_uns_combined <- reduce(c(mb_uns_c0, mb_uns_c1), ignore.strand = TRUE)
+mb_uns_combined <- mb_uns_combined[as.character(seqnames(mb_uns_combined)) %in% CANONICAL]
+
+
+atac_combined   <- atac_peaks
 
 cat(sprintf("  MEF/ESC combined: %s peaks\n", format(length(c_mesc_combined), big.mark = ",")))
 cat(sprintf("  GFP+ combined:    %s peaks\n", format(length(mb_gfp_combined), big.mark = ",")))
 cat(sprintf("  Unsorted combined: %s peaks\n", format(length(mb_uns_combined), big.mark = ",")))
+cat(sprintf("  GSE198467 ATAC:   %s peaks\n", format(length(atac_combined), big.mark = ",")))
+
+# Combined GFP+ scG4 overlap with PQS, using the SAME peak set as the
+# regioneR test below (concatenated cluster peaks, not reduced/union).
+cat("\nComputing combined GFP+ scG4 overlap with PQS...\n")
+oc_mb_gfp_combined <- overlap_counts(mb_gfp_combined, pqs, "Mouse brain GFP+ combined")
+print_oc(oc_mb_gfp_comb)
 
 pqs_chr <- restrict_chr1(pqs)
 c_mesc_chr <- restrict_chr1(c_mesc_combined)
 mb_gfp_chr <- restrict_chr1(mb_gfp_combined)
 mb_uns_chr <- restrict_chr1(mb_uns_combined)
+atac_chr <- restrict_chr1(atac_combined)
 
 run_perm <- function(peaks_chr, label) {
   set.seed(SEED)
@@ -217,12 +307,14 @@ cat("\nRunning permutation tests...\n")
 res_mesc <- run_perm(c_mesc_chr, "MEF/ESC combined")
 res_gfp  <- run_perm(mb_gfp_chr, "GFP+ combined")
 res_uns  <- run_perm(mb_uns_chr, "Unsorted combined")
+res_atac <- run_perm(atac_chr, "GSE198467 GFP+ sorted scATAC")
 
 # Store results for bar plot subtitles
 regioneR_stats <- list(
   mesc_mef = res_mesc,
   gfp = res_gfp,
-  uns = res_uns
+  uns = res_uns,
+  atac = res_atac
 )
 
 # =============================================================
@@ -386,7 +478,82 @@ ggsave(file.path(OUT_DIR, "bar_pct_peaks_overlap_PQS_mousebrain_unsorted.pdf"), 
        width = 6, height = 6)
 cat("  Saved bar_pct_peaks_overlap_PQS_mousebrain_unsorted.pdf\n")
 
-# ----- Save overlap table (all scG4 datasets) -----
+# =============================================================
+# Bar chart 2+: GFP+ sorted scG4 combined
+# =============================================================
+bar_mb_gfp_combined <- data.frame(
+  cluster = c("GFP+ scG4"),
+  pct     = oc_mb_gfp_combined$pct_peaks_overlap,
+  overlap = oc_mb_gfp_combined$overlap,
+  n_peaks = oc_mb_gfp_combined$n_peaks,
+  fold    = oc_mb_gfp_combined$fold_enrichment,
+  pval    = oc_mb_gfp_combined$binom_pvalue
+)
+bar_mb_gfp_combined$label <- sprintf("%.1f%%\n(%s / %s)",
+                          bar_mb_gfp_combined$pct,
+                          format(bar_mb_gfp_combined$overlap, big.mark = ","),
+                          format(bar_mb_gfp_combined$n_peaks, big.mark = ","))
+
+p_mb_gfp_combined <- ggplot(bar_mb_gfp_combined, aes(x = cluster, y = pct)) +
+  geom_col(width = 0.5, fill = "#9ecae1", color = "grey30") +
+  geom_text(aes(label = label), vjust = -0.3, size = 3.5, fontface = "bold") +
+  scale_y_continuous(limits = c(0, 105),
+                     breaks = seq(0, 100, 25),
+                     labels = function(x) paste0(x, "%")) +
+  labs(x = NULL,
+       y = "% of scG4 peaks overlapping >=1 PQS site",
+       title = "GFP+ sorted scG4 overlap with PQS",
+       subtitle = sprintf("%.2fx enrichment, z=%.1f, p<0.001 (regioneR chr1)",
+                          regioneR_stats$gfp$fold, regioneR_stats$gfp$zscore)) +
+  theme_bw(base_size = 12) +
+  theme(plot.title    = element_text(face = "bold", size = 13),
+        plot.subtitle = element_text(size = 10, color = "grey30"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank())
+
+ggsave(file.path(OUT_DIR, "bar_pct_peaks_overlap_PQS_scG4_GFPsorted_combined.pdf"), p_mb_gfp_combined,
+       width = 6, height = 6)
+cat("  Saved bar_pct_peaks_overlap_PQS_scG4_GFPsorted_combined.pdf\n")
+
+
+# =============================================================
+# Bar chart 4: GSE198467 GFP+ sorted scATAC
+# =============================================================
+bar_atac <- data.frame(
+  cluster = c("GSE198467 GFP+ scATAC"),
+  pct     = oc_atac$pct_peaks_overlap,
+  overlap = oc_atac$overlap,
+  n_peaks = oc_atac$n_peaks,
+  fold    = oc_atac$fold_enrichment,
+  pval    = oc_atac$binom_pvalue
+)
+bar_atac$label <- sprintf("%.1f%%\n(%s / %s)",
+                          bar_atac$pct,
+                          format(bar_atac$overlap, big.mark = ","),
+                          format(bar_atac$n_peaks, big.mark = ","))
+
+p_atac <- ggplot(bar_atac, aes(x = cluster, y = pct)) +
+  geom_col(width = 0.5, fill = "#9ecae1", color = "grey30") +
+  geom_text(aes(label = label), vjust = -0.3, size = 3.5, fontface = "bold") +
+  scale_y_continuous(limits = c(0, 105),
+                     breaks = seq(0, 100, 25),
+                     labels = function(x) paste0(x, "%")) +
+  labs(x = NULL,
+       y = "% of scATAC peaks overlapping >=1 PQS site",
+       title = "GSE198467 GFP+ sorted scATAC overlap with PQS",
+       subtitle = sprintf("%.2fx enrichment, z=%.1f, p<0.001 (regioneR chr1)",
+                          regioneR_stats$atac$fold, regioneR_stats$atac$zscore)) +
+  theme_bw(base_size = 12) +
+  theme(plot.title    = element_text(face = "bold", size = 13),
+        plot.subtitle = element_text(size = 10, color = "grey30"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank())
+
+ggsave(file.path(OUT_DIR, "bar_pct_peaks_overlap_PQS_scATAC_GSE198467_GFPsorted.pdf"), p_atac,
+       width = 6, height = 6)
+cat("  Saved bar_pct_peaks_overlap_PQS_scATAC_GSE198467_GFPsorted.pdf\n")
+
+# ----- Save overlap table (all datasets) -----
 overlap_tbl <- data.frame(
   comparison           = c("Cluster 0 (MEF) vs PQS",
                            "Cluster 1 (mESC) vs PQS",
@@ -394,29 +561,37 @@ overlap_tbl <- data.frame(
                            "Mouse brain GFP+ cluster 1 vs PQS",
                            "Mouse brain GFP+ cluster 2 vs PQS",
                            "Mouse brain unsorted cluster 0 vs PQS",
-                           "Mouse brain unsorted cluster 1 vs PQS"),
+                           "Mouse brain unsorted cluster 1 vs PQS",
+                           "GSE198467 GFP+ sorted scATAC vs PQS"),
    n_peaks              = c(oc0$n_peaks, oc1$n_peaks,
                             oc_mb_gfp_c0$n_peaks, oc_mb_gfp_c1$n_peaks, oc_mb_gfp_c2$n_peaks,
-                            oc_mb_uns_c0$n_peaks, oc_mb_uns_c1$n_peaks),
-   n_PQS_sites          = rep(oc0$n_pqs, 7),
+                            oc_mb_uns_c0$n_peaks, oc_mb_uns_c1$n_peaks,
+                            oc_atac$n_peaks),
+   n_PQS_sites          = rep(oc0$n_pqs, 8),
    n_overlap_PQS        = c(oc0$overlap, oc1$overlap,
                             oc_mb_gfp_c0$overlap, oc_mb_gfp_c1$overlap, oc_mb_gfp_c2$overlap,
-                            oc_mb_uns_c0$overlap, oc_mb_uns_c1$overlap),
+                            oc_mb_uns_c0$overlap, oc_mb_uns_c1$overlap,
+                            oc_atac$overlap),
    pct_peaks_overlap_PQS = round(c(oc0$pct_peaks_overlap, oc1$pct_peaks_overlap,
                                     oc_mb_gfp_c0$pct_peaks_overlap, oc_mb_gfp_c1$pct_peaks_overlap, oc_mb_gfp_c2$pct_peaks_overlap,
-                                    oc_mb_uns_c0$pct_peaks_overlap, oc_mb_uns_c1$pct_peaks_overlap), 1),
+                                    oc_mb_uns_c0$pct_peaks_overlap, oc_mb_uns_c1$pct_peaks_overlap,
+                                    oc_atac$pct_peaks_overlap), 1),
    pct_PQS_overlap_peaks = round(c(oc0$pct_pqs_overlap, oc1$pct_pqs_overlap,
                                     oc_mb_gfp_c0$pct_pqs_overlap, oc_mb_gfp_c1$pct_pqs_overlap, oc_mb_gfp_c2$pct_pqs_overlap,
-                                    oc_mb_uns_c0$pct_pqs_overlap, oc_mb_uns_c1$pct_pqs_overlap), 2),
+                                    oc_mb_uns_c0$pct_pqs_overlap, oc_mb_uns_c1$pct_pqs_overlap,
+                                    oc_atac$pct_pqs_overlap), 2),
    expected_overlap     = round(c(oc0$expected_overlap, oc1$expected_overlap,
                                    oc_mb_gfp_c0$expected_overlap, oc_mb_gfp_c1$expected_overlap, oc_mb_gfp_c2$expected_overlap,
-                                   oc_mb_uns_c0$expected_overlap, oc_mb_uns_c1$expected_overlap)),
+                                   oc_mb_uns_c0$expected_overlap, oc_mb_uns_c1$expected_overlap,
+                                   oc_atac$expected_overlap)),
    fold_enrichment      = round(c(oc0$fold_enrichment,  oc1$fold_enrichment,
                                    oc_mb_gfp_c0$fold_enrichment,  oc_mb_gfp_c1$fold_enrichment,  oc_mb_gfp_c2$fold_enrichment,
-                                   oc_mb_uns_c0$fold_enrichment,  oc_mb_uns_c1$fold_enrichment), 2),
+                                   oc_mb_uns_c0$fold_enrichment,  oc_mb_uns_c1$fold_enrichment,
+                                   oc_atac$fold_enrichment), 2),
    binomial_pvalue      = c(oc0$binom_pvalue, oc1$binom_pvalue,
                             oc_mb_gfp_c0$binom_pvalue, oc_mb_gfp_c1$binom_pvalue, oc_mb_gfp_c2$binom_pvalue,
-                            oc_mb_uns_c0$binom_pvalue, oc_mb_uns_c1$binom_pvalue)
+                            oc_mb_uns_c0$binom_pvalue, oc_mb_uns_c1$binom_pvalue,
+                            oc_atac$binom_pvalue)
 )
 write.csv(overlap_tbl,
           file.path(OUT_DIR, "overlap_counts.csv"),
@@ -427,6 +602,7 @@ cat("  Bar plots (PQS overlap):\n")
 cat("    - bar_pct_peaks_overlap_PQS_MEF_ESC_scG4.pdf\n")
 cat("    - bar_pct_peaks_overlap_PQS_mousebrain_GFPpos.pdf\n")
 cat("    - bar_pct_peaks_overlap_PQS_mousebrain_unsorted.pdf\n")
+cat("    - bar_pct_peaks_overlap_PQS_scATAC_GSE198467_GFPsorted.pdf\n")
 cat("  Data:\n")
 cat("    - overlap_counts.csv  (all scG4 datasets)\n")
 cat("    - permTest_summary.csv  (permutation test on chr1)\n")

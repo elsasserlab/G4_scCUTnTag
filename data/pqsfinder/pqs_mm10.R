@@ -24,21 +24,17 @@ library(rtracklayer)
 library(GenomicRanges)
 library(BSgenome)
 
-# Get chromosome lengths from BSgenome (no FASTA needed)
-if (run_pqsfinder) {
-  mm10_fasta <- "../../../bowtie2-index/mm10.fa"
-  if (!file.exists(mm10_fasta)) {
-      stop("FASTA file for mm10 genome not found.")
-  }
-  mm10_genome <- Biostrings::readDNAStringSet(mm10_fasta, format = "fasta")
-  seq_lengths <- width(mm10_genome)
-  names(seq_lengths) <- names(mm10_genome)
-} else {
-  library(BSgenome.Mmusculus.UCSC.mm10)
-  seq_lengths <- seqlengths(BSgenome.Mmusculus.UCSC.mm10)
-}
+# Get chromosome lengths from BSgenome (no external FASTA needed)
+library(BSgenome.Mmusculus.UCSC.mm10)
+mm10_genome <- BSgenome.Mmusculus.UCSC.mm10
+seq_lengths <- seqlengths(mm10_genome)
 
-bed_file <- "PQS_scores.mm10.bed"
+# Resolve paths relative to this script so it can be run from anywhere
+script_args <- commandArgs(trailingOnly = FALSE)
+script_file <- sub("^--file=", "", script_args[grep("^--file=", script_args)])
+script_dir <- if (length(script_file) == 1L) dirname(normalizePath(script_file)) else getwd()
+
+bed_file <- file.path(script_dir, "PQS_scores.mm10.bed")
 if (run_pqsfinder) {
   # Explicitly requested: run the expensive genome-wide scan and overwrite BED.
   cat("Running pqsfinder because --run-pqsfinder was supplied.\n")
@@ -118,6 +114,6 @@ mcols(reduced_granges)$score[is.na(mcols(reduced_granges)$score)] <- 0
 seqlengths(reduced_granges) <- seq_lengths[seqlevels(reduced_granges)]
 
 # Export as a BigWig track
-bigwig_file <- "PQS_scores.bw"
+bigwig_file <- file.path(script_dir, "PQS_scores.mm10.bw")
 cat("Writing to BigWig file:", bigwig_file, "\n")
 export(reduced_granges, bigwig_file, format = "BigWig")

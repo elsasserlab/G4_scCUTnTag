@@ -1,0 +1,6 @@
+category,count,pct_of_g4,pct_of_atac
+scG4_total_reduced,26656,100,
+scATAC_total_reduced,64251,,100
+overlap,20543,77.0670768307323,31.9730432211172
+scG4_only,6113,22.9329231692677,
+scATAC_only,43708,,68.0269567788828

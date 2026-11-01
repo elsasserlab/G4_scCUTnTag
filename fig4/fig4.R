@@ -52,7 +52,17 @@ dir.create(OUT, showWarnings = FALSE, recursive = TRUE)
 
 UNSORTED_RDS <- file.path(DATA, "GSE291468/GSM8836087_unsorted_Seurat_object.Rds")
 SORTED_RDS   <- file.path(DATA, "GSE291468/GSM8836086_GFPpos_Seurat_object.Rds")
-SC_DIR       <- file.path(RESULTS, "scBridge/output/unsorted_cl1_Zeisel")
+SC_DIRS <- c(
+  file.path(SCRIPT_DIR, "results", "scBridge"),
+  file.path(RESULTS, "scBridge/output/unsorted_cl1_Zeisel")
+)
+find_sc <- function(f) {
+  for (d in SC_DIRS) {
+    p <- file.path(d, f)
+    if (file.exists(p)) return(p)
+  }
+  file.path(SC_DIRS[1], f)
+}
 
 save_fig <- function(p, name, width = 10, height = 8) {
   ggsave(file.path(OUT, paste0(name, ".pdf")), p, width = width, height = height, device = "pdf")
@@ -618,7 +628,7 @@ if (run_panel("E")) {
 # ===========================================================================
 if (run_panel("F")) {
   cat("== Panel F: scBridge neuron UMAP ==\n")
-  src <- file.path(SC_DIR, "Seurat_UMAPs-unsorted_cl1_int.pdf")
+  src <- find_sc("Seurat_UMAPs-unsorted_cl1_int.pdf")
   if (file.exists(src)) {
     file.copy(src, file.path(OUT, "panel_F_neuron_integration.pdf"), overwrite = TRUE)
     cat("  Copied Seurat_UMAPs-unsorted_cl1_int.pdf\n")
@@ -632,7 +642,7 @@ if (run_panel("F")) {
 # ===========================================================================
 if (run_panel("G")) {
   cat("== Panel G: Neuron treemap ==\n")
-  src <- file.path(SC_DIR, "tree_plot-unsorted_cl1_predictions.pdf")
+  src <- find_sc("tree_plot-unsorted_cl1_predictions.pdf")
   if (file.exists(src)) {
     file.copy(src, file.path(OUT, "panel_G_neuron_treemap.pdf"), overwrite = TRUE)
     cat("  Copied tree_plot-unsorted_cl1_predictions.pdf\n")

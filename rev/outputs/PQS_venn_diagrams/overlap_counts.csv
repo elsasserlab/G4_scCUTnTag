@@ -1,0 +1,9 @@
+"comparison","n_peaks","n_PQS_sites","n_overlap_PQS","pct_peaks_overlap_PQS","pct_PQS_overlap_peaks","expected_overlap","fold_enrichment","binomial_pvalue"
+"Cluster 0 (MEF) vs PQS",31009,9458787,26979,87,1.45,31009,0.87,1
+"Cluster 1 (mESC) vs PQS",34133,9458787,30244,88.6,1.68,34133,0.89,1
+"Mouse brain GFP+ cluster 0 vs PQS",18652,9458787,16145,86.6,0.71,17042,0.95,1
+"Mouse brain GFP+ cluster 1 vs PQS",13288,9458787,11608,87.4,0.53,11293,1.03,2.92013183039686e-15
+"Mouse brain GFP+ cluster 2 vs PQS",9735,9458787,8182,84,0.32,7737,1.06,7.06070010672552e-31
+"Mouse brain unsorted cluster 0 vs PQS",26356,9458787,22827,86.6,1.05,25457,0.9,1
+"Mouse brain unsorted cluster 1 vs PQS",15620,9458787,13726,87.9,0.62,14000,0.98,0.999999999999051
+"GSE198467 GFP+ sorted scATAC vs PQS",92926,9458787,84402,90.8,2.95,92926,0.91,1

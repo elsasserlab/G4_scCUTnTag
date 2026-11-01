@@ -1,0 +1,25 @@
+peak_set,feature,n,pct,source,cell_type
+mESC bulk consensus,Promoter,13113,55.5635593220339,Bulk consensus,mESC
+mESC bulk consensus,5' UTR,6,0.0254237288135593,Bulk consensus,mESC
+mESC bulk consensus,3' UTR,205,0.86864406779661,Bulk consensus,mESC
+mESC bulk consensus,Exon (CDS),320,1.35593220338983,Bulk consensus,mESC
+mESC bulk consensus,Intron,4594,19.4661016949153,Bulk consensus,mESC
+mESC bulk consensus,Intergenic,5362,22.7203389830509,Bulk consensus,mESC
+mESC pseudobulk,Promoter,15004,43.9574605220754,Pseudobulk (sc),mESC
+mESC pseudobulk,5' UTR,16,0.0468754577681423,Pseudobulk (sc),mESC
+mESC pseudobulk,3' UTR,251,0.735358743737732,Pseudobulk (sc),mESC
+mESC pseudobulk,Exon (CDS),442,1.29493452084493,Pseudobulk (sc),mESC
+mESC pseudobulk,Intron,8834,25.8811121202356,Pseudobulk (sc),mESC
+mESC pseudobulk,Intergenic,9586,28.0842586353382,Pseudobulk (sc),mESC
+MEF bulk consensus,Promoter,11266,56.7099567099567,Bulk consensus,MEF
+MEF bulk consensus,5' UTR,6,0.0302023557837511,Bulk consensus,MEF
+MEF bulk consensus,3' UTR,118,0.593979663747106,Bulk consensus,MEF
+MEF bulk consensus,Exon (CDS),192,0.966475385080036,Bulk consensus,MEF
+MEF bulk consensus,Intron,4383,22.0628209000302,Bulk consensus,MEF
+MEF bulk consensus,Intergenic,3901,19.6365649854022,Bulk consensus,MEF
+MEF pseudobulk,Promoter,13583,43.8034119126705,Pseudobulk (sc),MEF
+MEF pseudobulk,5' UTR,9,0.0290238317907704,Pseudobulk (sc),MEF
+MEF pseudobulk,3' UTR,229,0.738495275565159,Pseudobulk (sc),MEF
+MEF pseudobulk,Exon (CDS),321,1.03518333387081,Pseudobulk (sc),MEF
+MEF pseudobulk,Intron,8649,27.8919023509304,Pseudobulk (sc),MEF
+MEF pseudobulk,Intergenic,8218,26.5019832951724,Pseudobulk (sc),MEF
