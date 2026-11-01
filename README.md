@@ -141,6 +141,7 @@ Our scG4 CUT&Tag data from three experiments:
 conda env create -f environment.yml
 conda activate scg4
 Rscript install_dependencies.R
+Rscript check_env.R   # optional: verifies all R packages are installed
 ```
 
 `environment.yml` provides R and the command-line tools used by the pipeline
