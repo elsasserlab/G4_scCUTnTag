@@ -106,7 +106,7 @@ anchor_matrix = anchor_matrix %>%
 write_tsv(anchor_matrix, glue("{workdir}/outputs/anchor_matrix.tsv"))
 
 genes.use = VariableFeatures(rna)
-refdata = GetAssayData(rna, assay = "RNA", slot = "data")[genes.use, ]
+refdata = GetAssayData(rna, assay = "RNA", layer = "data")[genes.use, ]
 
 ## Transfer data (Seurat)
 # imputation - data transfer
