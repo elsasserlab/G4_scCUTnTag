@@ -70,7 +70,7 @@ data/
 ├── GSE291468/regenerate_bigwigs.sh     # Optional regeneration (smooth150 pair)
 ├── README.md                 # This file
 ├── ../.gitignore             # Git ignore rules for data files
-├── genome/                   # Reference genome (shipped: ~42M)
+├── genome/                   # Reference genome (the 61 MB ENCODE4 cCRE BED comes from Zenodo)
 ├── cCRE/                     # Mouse brain cCRE with H3K27ac (shipped: ~1M)
 ├── pqsfinder/                # PQS predictions (shipped: ~407M)
 ├── GSE291468/                # Primary scG4 CUT&Tag data (partial: metadata + corrected BWs)

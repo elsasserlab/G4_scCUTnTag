@@ -120,12 +120,15 @@ data/GSE217860/*.bw
 data/GSE90894/*.xlsx
 
 # ============================================
-# Genome resources (shipped with repo)
+# Genome resources
 # ============================================
-# These are not downloaded from GEO - they are reference files bundled with the repo
+# These are not downloaded from GEO - they are reference files. The 61 MB
+# ENCODE4 cCRE BED exceeds GitHub's recommended 50 MB file size and comes
+# from the Zenodo release instead (extracted by data/download_data.sh).
 !data/genome/
 data/genome/*.bw
 data/genome/*.gtf.gz
+data/genome/cCRE.mm10.bed
 
 # ============================================
 # cCRE (shipped with repo)

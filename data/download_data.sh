@@ -264,6 +264,7 @@ if [[ "$FIG" == "all" ]]; then
     "Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds"
     "pqsfinder/PQS_scores.mm10.bed"
     "pqsfinder/PQS_scores.mm10.bw"
+    "genome/cCRE.mm10.bed"
   )
 elif [[ "$FIG" == "--fig1" ]]; then
   ZENODO_FILES=(
@@ -282,6 +283,7 @@ elif [[ "$FIG" == "--fig3" ]]; then
     "GSE291468/GSM8836086_Predicted_Astrocytes_RPGC.bw"
     "GSE291468/GSM8836086_Predicted_non-Astrocytes_RPGC.bw"
     "pqsfinder/PQS_scores.mm10.bw"
+    "genome/cCRE.mm10.bed"
   )
 elif [[ "$FIG" == "--fig4" ]]; then
   ZENODO_FILES=(
