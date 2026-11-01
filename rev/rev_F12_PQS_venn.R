@@ -278,7 +278,7 @@ cat(sprintf("  GSE198467 ATAC:   %s peaks\n", format(length(atac_combined), big.
 # regioneR test below (concatenated cluster peaks, not reduced/union).
 cat("\nComputing combined GFP+ scG4 overlap with PQS...\n")
 oc_mb_gfp_combined <- overlap_counts(mb_gfp_combined, pqs, "Mouse brain GFP+ combined")
-print_oc(oc_mb_gfp_comb)
+print_oc(oc_mb_gfp_combined)
 
 pqs_chr <- restrict_chr1(pqs)
 c_mesc_chr <- restrict_chr1(c_mesc_combined)

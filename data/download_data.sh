@@ -26,52 +26,137 @@
 #   bash data/download_data.sh --fig4       # only Fig 4 data
 #   bash data/download_data.sh --revisions  # only revision data
 #
-# Requirements: curl, gzip
+# Requirements: curl, gzip, tabix (for fragment indexes), git-lfs
+#               (repository files tracked via Git LFS are fetched with
+#               'git lfs pull', see Quick Start in README.md)
 #
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "${ROOT}")"
 DATA="${ROOT}"
+
+# Files that failed to download (the script continues and reports at the end)
+FAILED=()
+
+is_lfs_pointer() {
+  # Detect an un-materialized Git LFS pointer file (checked out without LFS)
+  [[ -f "$1" ]] && head -c 130 "$1" 2>/dev/null | grep -q "git-lfs.github.com/spec"
+}
+
+# ---------------------------------------------------------------------
+# Preflight: warn about repository files that are still Git LFS pointers.
+# Author-provided files (Seurat objects, bigwigs) are only shipped through
+# LFS and cannot be re-downloaded from GEO - they MUST be materialized
+# with 'git lfs pull' before any figure can be reproduced.
+# ---------------------------------------------------------------------
+if command -v git >/dev/null 2>&1 && git -C "${REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  if command -v git-lfs >/dev/null 2>&1; then
+    POINTERS=$(git -C "${REPO_ROOT}" lfs ls-files 2>/dev/null | awk '$2 == "-" {print $3}' | tr '\n' ' ')
+    if [[ -n "${POINTERS}" ]]; then
+      echo "[warn] The following repository files are un-materialized Git LFS pointers:"
+      echo "       ${POINTERS}"
+      echo "       Run 'git lfs install && git lfs pull' in ${REPO_ROOT} first."
+      echo "       Files that exist on GEO will be re-downloaded by this script;"
+      echo "       author-provided files can ONLY be obtained via 'git lfs pull'."
+      echo ""
+    fi
+  else
+    echo "[warn] git-lfs is not installed. Several required data files (bigwigs,"
+    echo "       author-provided Seurat objects) are tracked via Git LFS and will"
+    echo "       appear as tiny pointer files. Install git-lfs and run"
+    echo "       'git lfs install && git lfs pull' in ${REPO_ROOT}."
+    echo ""
+  fi
+fi
 
 download() {
   local url="$1" dest="$2"
   mkdir -p "$(dirname "${dest}")"
-  if [[ "${FORCE_DOWNLOAD:-0}" != "1" && -s "${dest}" ]]; then
+  if [[ "${FORCE_DOWNLOAD:-0}" != "1" && -s "${dest}" ]] && ! is_lfs_pointer "${dest}"; then
     echo "[skip] $(basename "${dest}") already exists"
-    return
+    return 0
+  fi
+  if is_lfs_pointer "${dest}"; then
+    echo "[warn] $(basename "${dest}") is an un-materialized Git LFS pointer;"
+    echo "       prefer 'git lfs pull', re-downloading from GEO anyway"
   fi
   echo "[download] $(basename "${dest}")"
-  curl -fL --retry 5 --retry-delay 2 --continue-at - -o "${dest}.part" "${url}"
-  mv "${dest}.part" "${dest}"
+  if curl -fL --retry 5 --retry-delay 2 --continue-at - -o "${dest}.part" "${url}"; then
+    mv "${dest}.part" "${dest}"
+  else
+    rm -f "${dest}.part"
+    echo "[error] failed to download $(basename "${dest}") - continuing"
+    FAILED+=("${dest}")
+  fi
 }
 
 download_gzip_as_plain() {
   local url="$1" dest="$2"
   local compressed="${dest}.gz.part"
   mkdir -p "$(dirname "${dest}")"
-  if [[ "${FORCE_DOWNLOAD:-0}" != "1" && -s "${dest}" ]]; then
+  if [[ "${FORCE_DOWNLOAD:-0}" != "1" && -s "${dest}" ]] && ! is_lfs_pointer "${dest}"; then
     echo "[skip] $(basename "${dest}") already exists"
-    return
+    return 0
   fi
   echo "[download] $(basename "${dest}")"
-  curl -fL --retry 5 --retry-delay 2 --continue-at - -o "${compressed}" "${url}"
-  gzip -dc "${compressed}" > "${dest}.part"
-  rm -f "${compressed}"
-  mv "${dest}.part" "${dest}"
+  if curl -fL --retry 5 --retry-delay 2 --continue-at - -o "${compressed}" "${url}"; then
+    if gzip -dc "${compressed}" > "${dest}.part"; then
+      rm -f "${compressed}"
+      mv "${dest}.part" "${dest}"
+    else
+      rm -f "${compressed}" "${dest}.part"
+      echo "[error] failed to decompress $(basename "${dest}") - continuing"
+      FAILED+=("${dest}")
+    fi
+  else
+    rm -f "${compressed}"
+    echo "[error] failed to download $(basename "${dest}") - continuing"
+    FAILED+=("${dest}")
+  fi
 }
 
 download_and_unzip() {
   local url="$1" dest="$2"
-  local compressed="${dest}.gz.part"
+  local compressed="${dest}.part"
   mkdir -p "$(dirname "${dest}")"
-  if [[ "${FORCE_DOWNLOAD:-0}" != "1" && -s "${dest}" ]]; then
+  if [[ "${FORCE_DOWNLOAD:-0}" != "1" && -s "${dest}" ]] && ! is_lfs_pointer "${dest}"; then
     echo "[skip] $(basename "${dest}") already exists"
-    return
+    return 0
   fi
   echo "[download] $(basename "${dest}")"
-  curl -fL --retry 5 --retry-delay 2 --continue-at - -o "${compressed}" "${url}"
-  mv "${compressed}" "${dest}.gz"
-  gzip -d "${dest}.gz"
+  if ! curl -fL --retry 5 --retry-delay 2 --continue-at - -o "${compressed}" "${url}"; then
+    rm -f "${compressed}"
+    echo "[error] failed to download $(basename "${dest}") - continuing"
+    FAILED+=("${dest}")
+    return 0
+  fi
+  if [[ "${dest}" == *.gz ]]; then
+    # The destination is itself a gzip file: store it as-is (do NOT gunzip,
+    # otherwise the file would be corrupt/unreadable by tabix and R).
+    mv "${compressed}" "${dest}"
+  else
+    # The destination is plain text: gunzip the downloaded file into place.
+    mv "${compressed}" "${dest}.gz"
+    gzip -d "${dest}.gz"
+  fi
+}
+
+# Index fragment files with tabix (required by several figure scripts)
+index_fragments() {
+  local frag
+  if command -v tabix >/dev/null 2>&1; then
+    for frag in "$@"; do
+      if [[ -s "${frag}" && ! -s "${frag}.tbi" ]]; then
+        echo "[tabix] indexing ${frag}"
+        tabix -f -p bed "${frag}" || echo "[warn] tabix failed for ${frag}"
+      fi
+    done
+  else
+    echo "[warn] tabix not found - fragment indexes (.tbi) not built."
+    echo "       Install tabix and run: tabix -p bed <fragments.tsv.gz>"
+    echo "       (the .tbi files shipped with the repository can also be used)"
+  fi
 }
 
 # Parse filter
@@ -240,6 +325,23 @@ if [[ "$FIG" == "all" || "$FIG" == "--fig1" || "$FIG" == "--fig2" || \
            "${DATA}/GSE291468/GSM8836085_bulkG4CnT_3T3_rep2.bw"
   download_and_unzip "https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM8836nnn/GSM8836085/suppl/GSM8836085_bulkG4CnT_3T3_rep2.broadPeak.gz" \
            "${DATA}/GSE291468/GSM8836085_bulkG4CnT_3T3_rep2.broadPeak"
+
+  # Tabix indexes for the fragment files (required by several scripts that
+  # query fragments in specific regions; .tbi files are also shipped with
+  # the repository)
+  index_fragments "${DATA}"/GSE291468/GSM*/CellRanger/fragments.tsv.gz
+
+  # Generate the PQS score-filtered subsets (PQS_scores.min40/min50.mm10.bed)
+  # required by fig1/fig1.R and the revision scripts. Pure awk, no extra tools.
+  if [[ ! -s "${DATA}/pqsfinder/PQS_scores.min40.mm10.bed" || \
+        ! -s "${DATA}/pqsfinder/PQS_scores.min50.mm10.bed" ]]; then
+    echo ""
+    echo "[filter_pqs] generating PQS_scores.min40/min50.mm10.bed"
+    bash "${DATA}/pqsfinder/filter_pqs.sh" || {
+      echo "[warn] filter_pqs.sh failed - generate the subsets manually with:"
+      echo "       bash data/pqsfinder/filter_pqs.sh"
+    }
+  fi
 fi
 
 # ======================================================================
@@ -248,27 +350,20 @@ fi
 if [[ "$FIG" == "all" || "$FIG" == "--fig2" || "$FIG" == "--fig3" || "$FIG" == "--fig4" ]]; then
   echo ""
   echo "--- GSE163484: Bartosovic scRNA-seq ---"
-  download "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE163nnn/GSE163484/suppl/GSE163484_Bartosovic_et_al_counts.csv.gz" \
-           "${DATA}/GSE163484/GSE163484_Bartosovic_et_al_counts.csv.gz"
-  download "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE163nnn/GSE163484/suppl/GSE163484_Bartosovic_et_al_annot.csv.gz" \
-           "${DATA}/GSE163484/GSE163484_Bartosovic_et_al_annot.csv.gz"
 
   # The Seurat reference object `scRNA_Seq-mouse_brain.Rds` is NOT available
-  # on GEO (GEO only provides the counts CSV and annotation CSV above). It is a
-  # processed Seurat object provided directly by the study's authors. Ask the
-  # corresponding author for the file.
-  #
-  # TODO: once available, replace the pseudocode below with the real download
-  # URL (e.g. a data-repository/Zenodo link) and enable the line:
-  #
-  # download "<DATA_SERVER_URL>/scRNA_Seq-mouse_brain.Rds" \
-  #          "${DATA}/GSE163484/scRNA_Seq-mouse_brain.Rds"
-  echo ""
-  echo "[note] Bartosovic reference Seurat object (scRNA_Seq-mouse_brain.Rds)"
-  echo "       is author-provided and NOT on GEO. Contact the corresponding"
-  echo "       author of Bartosovic et al. (Nat Biotechnol 2021) to obtain it,"
-  echo "       then place it at ${DATA}/GSE163484/scRNA_Seq-mouse_brain.Rds"
-  echo "       (download link to be added to this script when available)."
+  # on GEO (GEO only provides raw count matrices). It is a processed Seurat
+  # object provided directly by the study's authors, and it is SHIPPED with
+  # this repository via Git LFS. If the file is missing or still an LFS
+  # pointer, run 'git lfs pull' in the repository root.
+  if [[ -f "${DATA}/GSE163484/scRNA_Seq-mouse_brain.Rds" ]] && ! is_lfs_pointer "${DATA}/GSE163484/scRNA_Seq-mouse_brain.Rds"; then
+    echo "[ok] scRNA_Seq-mouse_brain.Rds present (shipped via Git LFS)"
+  else
+    echo "[warn] scRNA_Seq-mouse_brain.Rds missing or still a Git LFS pointer."
+    echo "       Run 'git lfs pull' in the repository root to materialize it."
+    echo "       (This author-provided file cannot be downloaded from GEO.)"
+    FAILED+=("${DATA}/GSE163484/scRNA_Seq-mouse_brain.Rds")
+  fi
 fi
 
 # ======================================================================
@@ -286,22 +381,17 @@ if [[ "$FIG" == "all" || "$FIG" == "--fig4" ]]; then
   # system atlas (Cell, DOI: 10.1016/j.cell.2018.06.021; http://mousebrain.org).
   # Those loom files are no longer publicly hosted (mousebrain.org is
   # offline), so the Rds was received directly from the study's authors.
-  # Contact the corresponding author to obtain it, then place it at
-  # ${DATA}/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds
-  #
-  # TODO: once available, replace the pseudocode below with the real download
-  # URL (e.g. a data-repository/Zenodo link) and enable the line:
-  #
-  # download "<DATA_SERVER_URL>/scRNA_Seq-Zeisel_et_al-neuron.Rds" \
-  #          "${DATA}/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds"
-  echo ""
-  echo "[note] Zeisel neuron Seurat object (scRNA_Seq-Zeisel_et_al-neuron.Rds)"
-  echo "       is author-provided and NOT on GEO (original data: Zeisel et al."
-  echo "       2018, Cell 174:999-1014, DOI: 10.1016/j.cell.2018.06.021;"
-  echo "       mousebrain.org). Contact the corresponding author to obtain"
-  echo "       it, then place it at"
-  echo "       ${DATA}/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds"
-  echo "       (download link to be added to this script when available)."
+  # It is SHIPPED with this repository via Git LFS. If the file is missing
+  # or still an LFS pointer, run 'git lfs pull' in the repository root.
+  if [[ -f "${DATA}/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds" ]] && ! is_lfs_pointer "${DATA}/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds"; then
+    echo "[ok] scRNA_Seq-Zeisel_et_al-neuron.Rds present (shipped via Git LFS)"
+  else
+    echo "[warn] scRNA_Seq-Zeisel_et_al-neuron.Rds missing or still a Git LFS"
+    echo "       pointer. Run 'git lfs pull' in the repository root to"
+    echo "       materialize it (this author-provided file cannot be"
+    echo "       downloaded from GEO)."
+    FAILED+=("${DATA}/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds")
+  fi
 fi
 
 # ======================================================================
@@ -317,6 +407,47 @@ if [[ "$FIG" == "all" || "$FIG" == "--fig4" || "$FIG" == "--revisions" ]]; then
   # (summit-containing narrowPeak), see data/GSE198467/reprocess_atac_peaks.sh
   download_and_unzip "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE198nnn/GSE198467/suppl/GSE198467_ATAC_fragments.tsv.gz" \
            "${DATA}/GSE198467/GSE198467_ATAC_fragments.tsv.gz"
+  index_fragments "${DATA}/GSE198467/GSE198467_ATAC_fragments.tsv.gz"
+
+  # The summit-containing consensus narrowPeak and the fragment-coverage
+  # RPGC bigWig are SHIPPED with the repository (the bigWig via Git LFS),
+  # so they are ready after 'git lfs pull'. The two scripts below are the
+  # original regeneration pipeline - they are only run here if the shipped
+  # files are missing and the required tools are available.
+  if [[ ! -s "${DATA}/GSE198467/GSE198467_atac_consensus_peaks.narrowPeak" ]]; then
+    if command -v macs2 >/dev/null 2>&1; then
+      echo ""
+      echo "[reprocess_atac_peaks] re-calling consensus peaks with MACS2"
+      bash "${DATA}/GSE198467/reprocess_atac_peaks.sh" || {
+        echo "[warn] reprocess_atac_peaks.sh failed - rerun manually with:"
+        echo "       bash data/GSE198467/reprocess_atac_peaks.sh"
+      }
+    else
+      echo "[warn] GSE198467_atac_consensus_peaks.narrowPeak missing and macs2"
+      echo "       not on PATH - regenerate with (after 'git lfs pull' it should"
+      echo "       be present): bash data/GSE198467/reprocess_atac_peaks.sh"
+    fi
+  else
+    echo "[ok] GSE198467_atac_consensus_peaks.narrowPeak present (shipped)"
+  fi
+
+  if [[ ! -s "${DATA}/GSE198467/GSE198467_ATAC_fragments.RPGC.bw" ]] || \
+     is_lfs_pointer "${DATA}/GSE198467/GSE198467_ATAC_fragments.RPGC.bw"; then
+    if command -v bamCoverage >/dev/null 2>&1; then
+      echo ""
+      echo "[make_atac_bigwig] building RPGC bigWig from fragments"
+      bash "${DATA}/GSE198467/make_atac_bigwig.sh" || {
+        echo "[warn] make_atac_bigwig.sh failed - rerun manually with:"
+        echo "       bash data/GSE198467/make_atac_bigwig.sh"
+      }
+    else
+      echo "[warn] GSE198467_ATAC_fragments.RPGC.bw missing (still a Git LFS"
+      echo "       pointer?) - run 'git lfs pull' first, or regenerate with:"
+      echo "       bash data/GSE198467/make_atac_bigwig.sh"
+    fi
+  else
+    echo "[ok] GSE198467_ATAC_fragments.RPGC.bw present (shipped via Git LFS)"
+  fi
 fi
 
 # ======================================================================
@@ -357,6 +488,15 @@ fi
 
 echo ""
 echo "============================================"
+if [[ "${#FAILED[@]}" -gt 0 ]]; then
+  echo "  Download finished with ${#FAILED[@]} failed file(s):"
+  for f in "${FAILED[@]}"; do
+    echo "    - ${f}"
+  done
+  echo "  Fix the issues above and rerun this script (already-downloaded"
+  echo "  files are skipped)."
+  exit 1
+fi
 echo "  Download complete."
 echo "  See README.md for preprocessing steps."
 echo "============================================"

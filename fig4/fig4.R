@@ -302,12 +302,17 @@ if (run_panel("C")) {
    cl0_np <- file.path(DATA, "GSE291468/GSM8836087_unsorted_cluster_0_peaks.narrowPeak")
    cl1_np <- file.path(DATA, "GSE291468/GSM8836087_unsorted_cluster_1_peaks.narrowPeak")
 
-  if (!all(file.exists(bw_cl0, bw_cl1, bw_gfp, bw_pqs, cl0_np, cl1_np))) {
-    missing <- c(bw_cl0, bw_cl1, bw_gfp, bw_pqs, cl0_np, cl1_np)[
-      !file.exists(c(bw_cl0, bw_cl1, bw_gfp, bw_pqs, cl0_np, cl1_np))
-    ]
-    message("  Missing files, skipping Panel C: ", paste(basename(missing), collapse = ", "))
-  } else {
+  missing <- c(bw_cl0, bw_cl1, bw_gfp, bw_pqs, cl0_np, cl1_np)[
+    !file.exists(c(bw_cl0, bw_cl1, bw_gfp, bw_pqs, cl0_np, cl1_np))
+  ]
+  if (length(missing)) {
+    stop(
+      "Panel C requires the following files, but some are missing:\n  ",
+      paste(missing, collapse = "\n  "),
+      "\nRun 'bash data/download_data.sh' first, and 'git lfs pull' in the\n",
+      "repository root (the whole-population RPGC bigWig is tracked via LFS)."
+    )
+  }
     # Match Figure 1F exactly: classify fixed summit-centered +/-500 bp
     # windows rather than fragmented overlaps of the raw peak intervals.
     cl0_np_gr <- rtracklayer::import(cl0_np)
@@ -439,7 +444,6 @@ if (run_panel("C")) {
     unlink(file.path(OUT, "tmp_bed"), recursive = TRUE)
 
     cat("  Saved Figure 1F-style Panel C composites\n")
-  }
 }
 
 # ===========================================================================
@@ -580,9 +584,6 @@ if (run_panel("E")) {
        gene_names <- c("Cc2d1a", "Lias", "Prkacb")
        edb <- EnsDb.Mmusculus.v79
         DefaultAssay(unsorted) <- "peaks"
-       # BigWig-only panel: prevent CoveragePlot from consulting the loaded
-       # fragment object or its stale Tabix index.
-       slot(unsorted[["peaks"]], "fragments") <- list()
       rpgc_tracks <- list(
         `cluster 0 RPGC` = file.path(DATA, "GSE291468/GSM8836087_cluster0_RPGC.bw"),
         `cluster 1 RPGC` = file.path(DATA, "GSE291468/GSM8836087_cluster1_RPGC.bw")

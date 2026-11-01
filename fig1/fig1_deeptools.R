@@ -100,14 +100,22 @@ for (info in bw_info) {
     deeptools_bin("computeMatrix"), info$bw, bed_cl0, bed_shared, bed_cl1,
     info$label, mat_file
   )
-  system(cmd_mat, intern = TRUE)
+  mat_status <- system(cmd_mat)
+  if (mat_status != 0 || !file.exists(mat_file)) {
+    stop("computeMatrix failed for ", info$label,
+         " (exit status ", mat_status, ")")
+  }
 
   # Compute 90th percentile zmax from the matrix for color scale capping
   zmax_cmd <- sprintf(
     "Rscript -e 'm <- read.table(gzfile(\"%s\"), skip=1, comment.char=\"@\"); cat(quantile(as.matrix(m), 0.90, na.rm=TRUE), \"\\n\")'",
     mat_file
   )
-  zmax_val <- as.numeric(system(zmax_cmd, intern = TRUE)[1])
+  zmax_val <- suppressWarnings(as.numeric(system(zmax_cmd, intern = TRUE)[1]))
+  if (is.na(zmax_val)) {
+    stop("Could not compute zmax from ", mat_file,
+         " - computeMatrix output missing or corrupt?")
+  }
   zmax_val <- round(zmax_val, 1)
   cat("    zmax (p90):", zmax_val, "\n")
 

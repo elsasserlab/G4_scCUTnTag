@@ -12,8 +12,12 @@
 # to approximate scG4 peak counts (~10k-30k per cluster).
 #
 # Output (rev/outputs/PQS_venn_diagrams/):
-#   - bar_pct_peaks_overlap_PQS_scATAC.pdf (width-adjusted)
+#   - bar_pct_peaks_overlap_PQS_scATAC_GSE198467_GFPsorted.pdf (width-adjusted)
 #   - scATAC_PQS_overlap_counts.csv (width-adjusted)
+#
+# NOTE: this is an EXTENSION of panel F12 (not part of the shipped figure
+# panels); it extends the PQS-overlap analysis to the GSE198467 scATAC
+# reference for comparison with the scG4 GFP+ sorted brain sample.
 # =============================================================
 
 source("rev/paths.R")
@@ -210,9 +214,9 @@ p_scATAC <- ggplot(bar_df, aes(x = assay, y = pct)) +
         panel.grid.major.x = element_blank(),
         axis.text.x = element_text(size = 11))
 
-ggsave(file.path(OUT_DIR, "bar_pct_peaks_overlap_PQS_scATAC.pdf"), p_scATAC,
+ggsave(file.path(OUT_DIR, "bar_pct_peaks_overlap_PQS_scATAC_GSE198467_GFPsorted.pdf"), p_scATAC,
        width = 5, height = 6)
-cat("  Saved bar_pct_peaks_overlap_PQS_scATAC.pdf\n")
+cat("  Saved bar_pct_peaks_overlap_PQS_scATAC_GSE198467_GFPsorted.pdf\n")
 
 cat("\n=== Done ===\n")
 cat("Output directory:", OUT_DIR, "\n")

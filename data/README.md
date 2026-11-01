@@ -16,7 +16,7 @@ bash download_data.sh --fig1
 bash download_data.sh --revisions
 ```
 
-This downloads all GEO data files to their proper subdirectories. Compressed files (`.gz`) are automatically decompressed during download, so you will have ready-to-use uncompressed files (e.g., `.narrowPeak`, `.broadPeak`, `.Rds`).
+This downloads all GEO data files to their proper subdirectories. Most compressed files (`.gz`) are automatically decompressed during download, so you will have ready-to-use uncompressed files (e.g., `.narrowPeak`, `.broadPeak`, `.Rds`). Fragment files (`fragments.tsv.gz`) intentionally stay compressed because the figure scripts read them directly as gzip and they are indexed with tabix (`.tbi` indexes are shipped with the repository).
 
 **IMPORTANT**
 

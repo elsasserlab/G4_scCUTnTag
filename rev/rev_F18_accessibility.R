@@ -37,8 +37,8 @@ read_summit <- function(fn){ d<-fread(inp(fn)); d<-d[V1 %in% CANON]
   gr<-GRanges(d$V1, IRanges(pmax(s-HALF,1L), s+HALF)); seqlengths(gr)<-GLEN[seqlevels(gr)]; trim(gr) }
 
 cells <- list(
-  mESC=list(scg4_pk=CLUSTER_PEAKS_1, atac_pk="GSE149080_ESC_WT_batch2_peaks.narrowPeak"),
-  MEF =list(scg4_pk=CLUSTER_PEAKS_0, atac_pk="GSE211123_3T3_control_ATAC_peaks.narrowPeak")
+  mESC=list(scg4_pk=CLUSTER_PEAKS_1, atac_pk="GSM4661960_ESC_WT_batch2_peaks.narrowPeak"),
+  MEF =list(scg4_pk=CLUSTER_PEAKS_0, atac_pk="GSM6451000_3T3_control_ATAC_peaks.narrowPeak")
 )
 
 venn<-list()

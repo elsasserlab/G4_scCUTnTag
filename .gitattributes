@@ -1,3 +1,6 @@
 data/pqsfinder/PQS_scores.mm10.bed filter=lfs diff=lfs merge=lfs -text
 *.bw filter=lfs diff=lfs merge=lfs -text
 data/pqsfinder/PQS_scores.mm10.bw filter=lfs diff=lfs merge=lfs -text
+# Large author-provided Seurat objects exceed GitHub's 100 MB limit
+data/GSE163484/scRNA_Seq-mouse_brain.Rds filter=lfs diff=lfs merge=lfs -text
+data/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds filter=lfs diff=lfs merge=lfs -text

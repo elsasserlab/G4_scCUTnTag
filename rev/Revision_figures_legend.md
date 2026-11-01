@@ -2,6 +2,8 @@
 
 The revision/rebuttal panels answer reviewer questions about G4 signal reproducibility, functional annotation, independence from chromatin accessibility, and QC of the neural datasets. Each panel produced by R scripts under `rev/`.
 
+**Note on permutation z-scores:** the regioneR permutation tests (`permTest`) are run in parallel (`mc.cores > 1`). The random permutation stream is therefore not fully deterministic across runs/machines, and reported z-scores can vary slightly (observed/expected ratios and resolution-limited P-values, ~P<=0.001, are stable). The z-scores in the CSVs are approximate.
+
 ## Shared data sources
 
 - **mESC-MEF single-cell G4 scCUT&Tag (GSE291468, GSM8836088)** — cluster-specific MACS2 narrowPeak sets (`GSM8836088_cluster_0_peaks.narrowPeak`, `GSM8836088_cluster_1_peaks.narrowPeak`), pseudobulk RPGC bigWigs (`cluster0_RPGC.bw`, `cluster1_RPGC.bw`), Seurat object
