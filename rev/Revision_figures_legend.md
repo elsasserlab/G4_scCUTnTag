@@ -38,9 +38,12 @@ Additional Figures. Each panel produced by R scripts under `rev/`.
 ## Supplementary QC (not a numbered panel)
 
 `rev/rev_QC_GSM5501245.R` and `rev/rev_QC_GSM5501245_comparison.R` generate
-`rev/outputs/QC_GSM5501245/panel_QC_GSM5501245.pdf`, which summarises peak-width,
-chromosome-distribution and published per-cell QC metrics for the third-party
-GSM5501245 (SINAG1, U2OS/MCF7) dataset and compares them with the ESC-MEF data.
+the QC panels for the third-party GSM5501245 (SINAG1, U2OS/MCF7) dataset:
+the comparison panel `panel_QC_GSM5501245.pdf` (written by
+`rev_QC_GSM5501245_comparison.R`; summarises peak-width, chromosome
+distribution and published per-cell QC metrics versus the ESC-MEF data)
+and the single-dataset panel `panel_QC_GSM5501245_single.pdf` (written by
+`rev_QC_GSM5501245.R`).
 These QC plots support the revision but are not assigned an F-number.
 
 **Note on permutation z-scores:** the regioneR permutation tests (`permTest`) are run in parallel (`mc.cores > 1`). The random permutation stream is therefore not fully deterministic across runs/machines, and reported z-scores can vary slightly (observed/expected ratios and resolution-limited P-values, ~P<=0.001, are stable). The z-scores in the CSVs are approximate.

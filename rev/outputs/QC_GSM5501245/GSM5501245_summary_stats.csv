@@ -1,0 +1,2 @@
+sample,cell_type,total_cells,mcf7_cells,u2os_cells,median_fragments_mcf7,median_fragments_u2os,fragment_range,total_peaks,median_peak_width,mean_peak_width
+GSM5501245,U2OS_MCF7_SINAG1 (mixed),2664,593,2071,739,939,652-1226,17956,885,869.952940521274

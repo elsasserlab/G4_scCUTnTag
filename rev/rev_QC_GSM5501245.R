@@ -7,7 +7,9 @@
 # Analogous to panel_S1_qc_GFPpos.pdf but adapted for aggregate data
 # Metrics from: Scientific Reports 11, 23641 (2021) - Supplementary Table S2
 #
-# Output: rev/outputs/QC_GSM5501245/panel_QC_GSM5501245.pdf
+# Output: rev/outputs/QC_GSM5501245/panel_QC_GSM5501245_single.pdf
+# (the shipped panel_QC_GSM5501245.pdf is the comparison panel from
+# rev_QC_GSM5501245_comparison.R, not this single-dataset QC)
 # ===========================================================================
 
 suppressPackageStartupMessages({
@@ -134,9 +136,9 @@ p_combined <- plot_grid(
   rel_heights = c(1, 0.8)
 )
 
-ggsave(file.path(OUT_DIR, "panel_QC_GSM5501245.pdf"), p_combined,
+ggsave(file.path(OUT_DIR, "panel_QC_GSM5501245_single.pdf"), p_combined,
        width = 14, height = 10, dpi = 300)
-cat("  Saved panel_QC_GSM5501245.pdf\n")
+cat("  Saved panel_QC_GSM5501245_single.pdf\n")
 
 # Save summary stats
 summary_stats <- data.frame(

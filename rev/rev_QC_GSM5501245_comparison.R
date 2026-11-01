@@ -6,7 +6,12 @@
 # - GSM5501245: U2OS+MCF7 mixed (from paper: Sci Rep 11, 23641, 2021)
 # - GSM8836088: mESC+MEF mixture (from our Fig 1 Panel C)
 #
-# Output: rev/outputs/QC_GSM5501245/panel_QC_GSM5501245_comparison.pdf
+# Output: rev/outputs/QC_GSM5501245/panel_QC_GSM5501245.pdf
+#
+# NOTE: this script writes the SHIPPED filename panel_QC_GSM5501245.pdf
+# (the shipped panel is this comparison, not the single-dataset QC).
+# The single-dataset QC panel from rev_QC_GSM5501245.R is written to
+# panel_QC_GSM5501245_single.pdf.
 # ===========================================================================
 
 suppressPackageStartupMessages({
@@ -214,9 +219,9 @@ p_combined <- plot_grid(
   align = "hv"
 )
 
-ggsave(file.path(OUT_DIR, "panel_QC_GSM5501245_comparison.pdf"), p_combined,
+ggsave(file.path(OUT_DIR, "panel_QC_GSM5501245.pdf"), p_combined,
        width = 14, height = 10, dpi = 300)
-cat("  Saved panel_QC_GSM5501245_comparison.pdf\n")
+cat("  Saved panel_QC_GSM5501245.pdf\n")
 
 cat("\n=== Summary ===\n")
 cat("ESC-MEF (GSM8836088):\n")
