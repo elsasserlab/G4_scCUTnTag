@@ -2,7 +2,7 @@
 
 Lyu et al. (2025)
 
-This repository contains the complete analysis pipeline and data for our study on G-quadruplex (scG4) patterns in mouse brain using single-cell CUT&Tag. All main scripts, generated figure outputs, and data to reproduce Figures 1-4 and Supplementary Figures are included.
+This repository contains the analysis scripts and data for our study on G-quadruplex (scG4) patterns in mouse brain using single-cell CUT&Tag. All figure scripts, generated figure outputs, and the data required to reproduce Figures 1-4 and Supplementary Figures are included. Upstream preprocessing that cannot be re-run from the repository (Cell Ranger runs, scBridge model training) is described in the respective READMEs; see "Known non-reproducible steps" below.
 
 ---
 
@@ -13,10 +13,14 @@ This repository contains the complete analysis pipeline and data for our study o
 ```bash
 git clone <repo-url>
 cd G4_scCUTnTag
+git lfs install          # requires git-lfs; several data files are LFS-tracked
+git lfs pull             # materialize LFS files (bigWigs, author-provided Rds)
 bash data/download_data.sh
 ```
 
-This downloads ~2GB of data from GEO (accession GSE291468 and references).
+`git lfs pull` fetches files that are not on GEO (whole-population and
+cell-type-predicted bigWigs, author-provided Seurat reference objects). The
+download script warns if LFS files are still un-materialized pointers.
 
 ### 2. Generate Figures
 
@@ -103,7 +107,7 @@ Our scG4 CUT&Tag data from three experiments:
 | GSE198467 | Brain snATAC-seq | Fig 4 |
 | GSE149080 | mESC ATAC-seq | Fig 1 |
 | GSE211123 | 3T3 ATAC-seq | Fig 1 |
-| GSE217860 | 3T3 G4 CUT&Tag | Fig 1 |
+| GSE217860 | 3T3 G4 CUT&Tag | (not used by any figure script) |
 | GSE90894 | Chronis RNA-seq | Rev |
 
 ### Genome Resources
@@ -153,12 +157,16 @@ not on `PATH`.
 
 - CRAN: Seurat, Signac, tidyverse, data.table, glue, argparse, cowplot, ggpubr,
   ggrepel, ggrastr, patchwork, viridis, scales, RColorBrewer, readxl, gridExtra,
-  ggplotify, eulerr, VennDiagram, hrbrthemes, Matrix, pacman
+  ggplotify, eulerr, VennDiagram, hrbrthemes, Matrix, pacman, matrixStats, fields
 - Bioconductor: GenomicRanges, IRanges, GenomeInfoDb, GenomicFeatures, rtracklayer,
   BSgenome, BSgenome.Mmusculus.UCSC.mm10, EnsDb.Mmusculus.v79, org.Mm.eg.db,
+  ensembldb, glmGamPoi, plyranges,
   TxDb.Mmusculus.UCSC.mm10.knownGene, ChIPseeker, pqsfinder, ComplexHeatmap,
   circlize, Gviz, regioneR, cicero, monocle3
-- GitHub: cnluzon/wigglescout, cnluzon/bedscout, egeulgen/DoubletFinder
+- GitHub: cnluzon/wigglescout, cnluzon/bedscout, egeulgen/DoubletFinder,
+  mojaveazure/loomR
+- `enrichR` was archived on CRAN and is installed from the CRAN archive
+  (version 3.2) by `install_dependencies.R`
 
 ### Command-line tools
 
@@ -172,6 +180,26 @@ not on `PATH`.
 - No scBridge installation, Python environment or GPU is required; all
   scBridge-derived inputs used by Figures 3 and 4 are shipped precomputed
 - Internet access for the Enrichr web API (Fig. 1G, 4D and rev F25)
+
+---
+
+## Known non-reproducible steps
+
+The following upstream steps cannot be re-run from this repository; their
+outputs are either shipped with the repo or regenerated with the provided
+scripts:
+
+- **Cell Ranger runs** (raw FASTQ -> fragments/peak matrices): not included;
+  the Cell Ranger outputs used by the figures are downloaded from GEO or
+  shipped with the repository (`data/GSE291468/GSM*/CellRanger/`).
+- **scBridge model training** (GPU required): not re-runnable; all scBridge
+  outputs used by Figures 3-4 are shipped in `fig3/results/scBridge/` and
+  `fig4/results/scBridge/`.
+- **150 bp-smoothed bigWigs** (`*.smooth150.bw`, used by Fig 3C/S1): too large
+  to ship; regenerate with `bash data/GSE291468/regenerate_bigwigs.sh` before
+  running Figure 3 (see `fig3/README.md`).
+- **Author-provided Seurat reference objects** (Bartosovic, Zeisel): shipped
+  via Git LFS; not available on GEO.
 
 ---
 
@@ -301,4 +329,12 @@ See `README.md#software-requirements` for the full package list.
 ### scBridge errors
 scBridge is not required. The inputs used by the figures are shipped in
 `fig3/results/scBridge/` and `fig4/results/scBridge/`; if they are missing,
-re-clone or re-download the repository.
+re-clone or re-download the repository (they are regular Git files, not LFS).
+
+### LFS files are tiny "pointer" files
+If bigWigs or `.Rds` files are only ~130 bytes, git-lfs did not materialize
+them. Run:
+```bash
+git lfs install
+git lfs pull
+```

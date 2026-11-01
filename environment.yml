@@ -13,3 +13,4 @@ dependencies:
   - macs2
   - htslib
   - curl
+  - git-lfs

@@ -11,19 +11,22 @@ cran <- c(
   "Seurat", "Signac", "tidyverse", "data.table", "glue", "argparse",
   "cowplot", "ggpubr", "ggrepel", "ggrastr", "patchwork", "viridis",
   "scales", "RColorBrewer", "readxl", "gridExtra", "ggplotify", "eulerr",
-  "VennDiagram", "hrbrthemes", "Matrix", "pacman", "enrichR", "circlize"
+  "VennDiagram", "hrbrthemes", "Matrix", "pacman", "circlize",
+  "matrixStats", "fields"
 )
 bioc <- c(
   "GenomicRanges", "IRanges", "GenomeInfoDb", "GenomicFeatures",
   "rtracklayer", "BSgenome", "BSgenome.Mmusculus.UCSC.mm10",
-  "EnsDb.Mmusculus.v79", "org.Mm.eg.db",
+  "EnsDb.Mmusculus.v79", "org.Mm.eg.db", "ensembldb", "glmGamPoi",
+  "plyranges",
   "TxDb.Mmusculus.UCSC.mm10.knownGene", "ChIPseeker", "pqsfinder",
   "ComplexHeatmap", "Gviz", "regioneR", "cicero", "monocle3"
 )
 github <- c(
   "cnluzon/wigglescout",
   "cnluzon/bedscout",
-  "egeulgen/DoubletFinder"
+  "egeulgen/DoubletFinder",
+  "mojaveazure/loomR"
 )
 
 installed <- rownames(installed.packages())
@@ -36,3 +39,16 @@ if (length(to_bioc)) BiocManager::install(to_bioc, update = FALSE, ask = FALSE)
 
 if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
 remotes::install_github(github, upgrade = "never")
+
+# enrichR was removed from CRAN; install the last available version from the
+# CRAN archive (fig4/fig4_enrichment.R and rev/rev_F25_enrichR_heatmap.R)
+if (!requireNamespace("enrichR", quietly = TRUE)) {
+  tryCatch(
+    remotes::install_version("enrichR", version = "3.2", upgrade = "never"),
+    error = function(e) {
+      remotes::install_url(
+        "https://cran.r-project.org/src/contrib/Archive/enrichR/enrichR_3.2.tar.gz"
+      )
+    }
+  )
+}

@@ -117,11 +117,12 @@ mcols(merged_intervals) <- DataFrame(
 )
 
 cat("  Reducing merged intervals...\n")
-# ======
-# Hacking this here for the moment, to plot the scG4 peaks in blue, not the intersection
-# merged_reduced <-  g4_peaks_gr
-# ======
-#merged_reduced <- reduce(merged_intervals, ignore.strand = TRUE, with.revmap = TRUE)
+# The shipped figure and F30_intersection_data.csv (26,982 rows) were
+# generated with merged_reduced = the scG4 peak union (see F30 legend:
+# "Intersection" category = scG4 peaks overlapping ATAC). The strict
+# interval intersection below is kept for reference.
+merged_reduced <- g4_peaks_gr
+# merged_reduced <- reduce(merged_intervals, ignore.strand = TRUE, with.revmap = TRUE)
 
 cat(sprintf("  Merged intervals (reduced, INTERSECTION): %s\n", format(length(merged_reduced), big.mark = ",")))
 

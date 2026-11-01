@@ -169,5 +169,5 @@ out_tbl <- do.call(rbind, lapply(names(results), function(cl) {
     regioner_zscore = round(r$regioner_zscore, 2)
   )
 }))
-write.csv(out_tbl, file.path(OUT_ROOT, "rev", "outputs", "G4_vs_accessibility_decoupling", "F18_significance.csv"), row.names = FALSE)
+write.csv(out_tbl, file.path(OUT_ROOT, "G4_vs_accessibility_decoupling", "F18_significance.csv"), row.names = FALSE)
 cat("Saved F18_significance.csv\n")

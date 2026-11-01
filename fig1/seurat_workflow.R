@@ -70,8 +70,17 @@ if (is.na(matrix_file)) {
   stop("No peak-barcode matrix (.h5) found in ", cell_ranger)
 }
 counts = Read10X_h5(filename = matrix_file)
+singlecell_file = glue("{cell_ranger}singlecell.csv")
+if (!file.exists(singlecell_file)) {
+  stop(
+    "singlecell.csv not found in ", cell_ranger, "\n",
+    "It is shipped with the repository under\n",
+    "data/GSE291468/GSM8836088_mESC_MEF/CellRanger/singlecell.csv\n",
+    "(run 'git lfs pull' if it is still a Git LFS pointer)."
+  )
+}
 metadata = read.csv(
-  file = glue("{cell_ranger}singlecell.csv"),
+  file = singlecell_file,
   header = TRUE,
   row.names = 1
 )
@@ -112,7 +121,9 @@ doublet_test = NormalizeData(doublet_test)
 doublet_test = FindVariableFeatures(doublet_test, verbose = F)
 doublet_test = ScaleData(
   doublet_test,
-  vars.to.regress = c("nFeature_RNA", "percent_mito"),
+  # NOTE: only nFeature_RNA is regressed. percent_mito is not defined for a
+  # peaks assay (no mitochondrial genes), so including it breaks reruns.
+  vars.to.regress = "nFeature_RNA",
   verbose = F
 )
 doublet_test = RunPCA(doublet_test, verbose = F, npcs = 20)
@@ -128,7 +139,14 @@ doublet_test <- doubletFinder_v3(
   nExp = nExp,
   PCs = 1:10
 )
-singlets = rownames(doublet_test@meta.data[which(doublet_test@meta.data[, 5] == "Singlet"), ])
+# select the DoubletFinder classification column by name (its position can
+# vary between Seurat/DoubletFinder versions)
+df_col = colnames(doublet_test@meta.data)[grepl("DF.classification", colnames(doublet_test@meta.data))]
+if (length(df_col) != 1) {
+  stop("Expected exactly one DF.classification column, found: ",
+       paste(df_col, collapse = ", "))
+}
+singlets = rownames(doublet_test@meta.data[which(doublet_test@meta.data[[df_col]] == "Singlet"), ])
 
 # keep only singlets!
 meta = seurat@meta.data

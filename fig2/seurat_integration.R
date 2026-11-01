@@ -132,7 +132,9 @@ cell_types = rownames(predicted_labels)
 predicted_labels = as.tibble(predicted_labels) %>% mutate(pred_cell_type = cell_types)
 predicted_labels = predicted_labels %>% pivot_longer(
   .,
-  cols = "AAACGAAAGAAGCCGT-1":"TTTGTGTTCTCGCGTT-1",
+  # all barcode score columns (everything except the appended label column);
+  # hard-coding the first/last barcode breaks when the object changes
+  cols = -pred_cell_type,
   names_to = "cell_id",
   values_to = "pred_max_score"
 )
