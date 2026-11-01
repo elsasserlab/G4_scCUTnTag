@@ -8,7 +8,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
 }
 
 cran <- c(
-  "Seurat", "Signac", "tidyverse", "data.table", "glue", "argparse",
+  "Signac", "tidyverse", "data.table", "glue", "argparse",
   "cowplot", "ggpubr", "ggrepel", "ggrastr", "patchwork", "viridis",
   "scales", "RColorBrewer", "readxl", "gridExtra", "ggplotify", "eulerr",
   "VennDiagram", "hrbrthemes", "Matrix", "pacman", "circlize",
@@ -38,6 +38,20 @@ to_bioc <- setdiff(bioc, installed)
 if (length(to_bioc)) BiocManager::install(to_bioc, update = FALSE, ask = FALSE)
 
 if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
+
+# Seurat is version-pinned: the shipped Seurat objects and integration
+# intermediates were produced with Seurat 5.1.0 / SeuratObject 5.0.2
+# (see scripts/*/session_info.txt). Newer Seurat releases change the
+# integration anchors and are NOT compatible with this repository.
+if (!"SeuratObject" %in% installed ||
+    compareVersion(as.character(packageVersion("SeuratObject")), "5.0.2") != 0) {
+  remotes::install_version("SeuratObject", version = "5.0.2", upgrade = "never")
+}
+if (!"Seurat" %in% installed ||
+    compareVersion(as.character(packageVersion("Seurat")), "5.1.0") != 0) {
+  remotes::install_version("Seurat", version = "5.1.0", upgrade = "never")
+}
+
 remotes::install_github(github, upgrade = "never")
 
 # enrichR was removed from CRAN; install the last available version from the

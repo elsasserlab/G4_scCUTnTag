@@ -537,7 +537,7 @@ ga_markers_top = ga_markers %>% group_by(cluster) %>% top_n(wt = avg_log2FC, n =
 ga_markers_hm = DoHeatmap(
   object = seurat,
   features = ga_markers_top$gene,
-  slot = 'data',
+  layer = 'data',
   raster = FALSE,
   assay = "GA"
 ) +

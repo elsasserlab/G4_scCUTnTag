@@ -144,9 +144,12 @@ Rscript install_dependencies.R
 Rscript check_env.R   # optional: verifies all R packages are installed
 ```
 
-`environment.yml` provides R and the command-line tools used by the pipeline
+`environment.yml` provides R 4.3 and the command-line tools used by the pipeline
 (deepTools, bedtools, samtools, MACS2, tabix). `install_dependencies.R` installs
-the remaining CRAN, Bioconductor and GitHub R packages.
+the remaining CRAN, Bioconductor and GitHub R packages, and pins **Seurat to
+exactly 5.1.0 (SeuratObject 5.0.2)** — the version the shipped Seurat objects
+and integration intermediates were produced with; do not use newer Seurat
+releases, and `check_env.R` fails if the version differs.
 
 `data/GSE291468/regenerate_bigwigs.sh` and `data/GSE198467/make_atac_bigwig.sh`
 activate the conda environment named `scg4` by default. Override with
@@ -156,9 +159,14 @@ not on `PATH`.
 
 ### R packages installed by `install_dependencies.R`
 
-- CRAN: Seurat, Signac, tidyverse, data.table, glue, argparse, cowplot, ggpubr,
+- CRAN: Signac, tidyverse, data.table, glue, argparse, cowplot, ggpubr,
   ggrepel, ggrastr, patchwork, viridis, scales, RColorBrewer, readxl, gridExtra,
   ggplotify, eulerr, VennDiagram, hrbrthemes, Matrix, pacman, matrixStats, fields
+- **Seurat is pinned to 5.1.0 (SeuratObject 5.0.2)** and installed with
+  `remotes::install_version`: the shipped Seurat objects and integration
+  intermediates were produced with exactly this version, and newer Seurat
+  releases change integration anchors and results. `check_env.R` enforces
+  this version.
 - Bioconductor: GenomicRanges, IRanges, GenomeInfoDb, GenomicFeatures, rtracklayer,
   BSgenome, BSgenome.Mmusculus.UCSC.mm10, EnsDb.Mmusculus.v79, org.Mm.eg.db,
   ensembldb, glmGamPoi, plyranges,
