@@ -2,7 +2,7 @@
 
 Lyu et al. (2025)
 
-This repository contains the complete analysis pipeline and data for our study on G-quadruplex (scG4) patterns in mouse brain using single-cell CUT&Tag. All main scripts, processed Seurat objects, and data to reproduce Figures 1-4 and Supplementary Figures are included.
+This repository contains the complete analysis pipeline and data for our study on G-quadruplex (scG4) patterns in mouse brain using single-cell CUT&Tag. All main scripts, generated figure outputs, and data to reproduce Figures 1-4 and Supplementary Figures are included.
 
 ---
 
@@ -12,9 +12,8 @@ This repository contains the complete analysis pipeline and data for our study o
 
 ```bash
 git clone <repo-url>
-cd github/data
-bash download_data.sh
-cd ..
+cd G4_scCUTnTag
+bash data/download_data.sh
 ```
 
 This downloads ~2GB of data from GEO (accession GSE291468 and references).
@@ -45,7 +44,7 @@ Rscript fig4/fig4.R
 
 ```
 github/
-├── data/                    # Data files (~651MB shipped + ~2GB downloaded)
+├── data/                    # Data files (~750MB shipped + ~2GB downloaded)
 │   ├── GSE291468/          # Primary scG4 CUT&Tag data (our study)
 │   ├── GSE163484/          # Bartosovic scRNA-seq reference
 │   ├── GSE198467/          # Brain snATAC-seq reference
@@ -126,7 +125,7 @@ Our scG4 CUT&Tag data from three experiments:
 | **Fig. 4** | GSM8836087 (unsorted)<br>GSM8836086 (sorted reference) | `GSM8836087_unsorted_Seurat_object.Rds`<br>`GSM8836087_unsorted_cluster_{0,1}_peaks.narrowPeak` | Query-to-reference mapping, mapped labels, prediction scores, peak-overlap Venn |
 | **Fig. 4C** | GSM8836087 (unsorted clusters) | `GSM8836087_cluster{0,1}_RPGC.bw`<br>`GSM8836086_GFP_sorted_mousebrain.rpgc.bw`<br>`PQS_scores.mm10.bw` | RPGC signal profiles/heatmaps for cluster-specific peaks, PQS score profiles |
 | **Fig. 4D** | GSM8836087 (unsorted) | `GSM8836087_unsorted_cluster_{0,1}_peaks.narrowPeak` | Nearest-gene annotation and enrichR GO Biological Process analysis |
-| **Fig. 4F-G** | GSM8836087 + Zeisel neuron reference | `fig4/results/scBridge/`<br>`Zeisel_et_al-neuron.Rds` | Precomputed scBridge neuron integration UMAP and neuron-type treemap |
+| **Fig. 4F-G** | GSM8836087 + Zeisel neuron reference | `fig4/results/scBridge/`<br>`data/Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds` | Precomputed scBridge neuron integration UMAP and neuron-type treemap (Rds only needed to re-run scBridge itself) |
 
 ---
 
@@ -208,6 +207,19 @@ The Cicero coaccessibility outputs in `fig3/results/cicero/` are shipped because
 - `fig3/fig3.R --only=E` uses the shipped connection tables directly
 
 See `fig3/README.md` for details.
+
+### Shipped intermediate results
+
+Only the intermediate files that figure scripts read as inputs are shipped
+(~22MB, tracked); everything else under `results/` is regenerable and ignored:
+
+- `fig2/results/integration/outputs/`: prediction scores, marker table,
+  anchor matrix. The two large integration objects (`G4_scRNA_integration.Rds`,
+  `scRNA_Seq_Seurat_object.Rds`) are **not** shipped — generate them with
+  `Rscript fig2/seurat_integration.R` (required before `fig2/fig2.R`).
+- `fig3/results/scBridge/*.csv`: scBridge embedding/predictions (Fig 3B-D).
+- `fig3/results/cicero/*.Rds`: coaccessibility tables (Fig 3E).
+- `fig4/results/scBridge/*.pdf`: scBridge neuron integration (Fig 4F-G).
 
 ---
 
