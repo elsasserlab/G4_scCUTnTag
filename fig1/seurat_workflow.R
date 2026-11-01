@@ -75,8 +75,7 @@ if (!file.exists(singlecell_file)) {
   stop(
     "singlecell.csv not found in ", cell_ranger, "\n",
     "It is shipped with the repository under\n",
-    "data/GSE291468/GSM8836088_mESC_MEF/CellRanger/singlecell.csv\n",
-    "(run 'git lfs pull' if it is still a Git LFS pointer)."
+    "data/GSE291468/GSM8836088_mESC_MEF/CellRanger/singlecell.csv"
   )
 }
 metadata = read.csv(

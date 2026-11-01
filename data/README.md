@@ -104,11 +104,11 @@ Our scG4 CUT&Tag data from three experiments:
   `data/GSE198467/reprocess_atac_peaks.sh` (MACS2, q=1e-6, ~93k peaks):
   `GSE198467_atac_consensus_peaks.narrowPeak`.
 - **GSE149080**: mESC ATAC-seq (bulk reference). The bigWig and narrowPeak
-  are SHIPPED via Git LFS: GEO publishes only an mm9 bigWig for GSM4661960
+  are SHIPPED with the Zenodo release: GEO publishes only an mm9 bigWig for GSM4661960
   (this repository is mm10) and no peak calls. The shipped files are
   author-reprocessed mm10 versions and cannot be downloaded from GEO.
 - **GSE211123**: 3T3 ATAC-seq (bulk reference). The bigWig and narrowPeak
-  are SHIPPED via Git LFS; the shipped bigWig was re-processed/normalized
+  are SHIPPED with the Zenodo release; the shipped bigWig was re-processed/normalized
   with the same pipeline as GSE149080 and differs from the GEO file.
 - **GSE217860**: 3T3 G4 CUT&Tag (bulk reference)
 - **GSE90894**: Chronis mESC/MEF RNA-seq table

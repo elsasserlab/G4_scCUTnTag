@@ -13,14 +13,15 @@ This repository contains the analysis scripts and data for our study on G-quadru
 ```bash
 git clone <repo-url>
 cd G4_scCUTnTag
-git lfs install          # requires git-lfs; several data files are LFS-tracked
-git lfs pull             # materialize LFS files (bigWigs, author-provided Rds)
 bash data/download_data.sh
 ```
 
-`git lfs pull` fetches files that are not on GEO (whole-population and
-cell-type-predicted bigWigs, author-provided Seurat reference objects). The
-download script warns if LFS files are still un-materialized pointers.
+The download script fetches everything that is not in the git repository:
+large data files (bigWigs, author-provided Seurat reference objects, PQS
+scores) are extracted from the Zenodo release of this repository
+(DOI 10.5281/zenodo.23862054) — the script downloads the release zip once,
+extracts only the required data files into `data/` and deletes the zip —
+and the remaining files are downloaded directly from GEO/GENCODE.
 
 ### 2. Generate Figures
 
@@ -204,20 +205,20 @@ scripts:
 - **scBridge model training** (GPU required): not re-runnable; all scBridge
   outputs used by Figures 3-4 are shipped in `fig3/results/scBridge/` and
   `fig4/results/scBridge/`.
-- **150 bp-smoothed bigWigs** (`*.smooth150.bw`, used by Fig 3C/S1): too large
-  to ship; regenerate with `bash data/GSE291468/regenerate_bigwigs.sh` before
-  running Figure 3 (see `fig3/README.md`).
+- **150 bp-smoothed bigWigs** (`*.smooth150.bw`, used by Fig 3C/S1): shipped
+  via the Zenodo release and extracted by `data/download_data.sh`; they can
+  also be regenerated with `bash data/GSE291468/regenerate_bigwigs.sh`
+  (see `fig3/README.md`).
 - **Author-provided Seurat reference objects** (Bartosovic, Zeisel): shipped
-  via Git LFS; not available on GEO.
+  via the Zenodo release; not available on GEO.
 - **Bulk ATAC-seq bigWigs and peak calls** (GSE149080 mESC, GSE211123 3T3):
-  shipped via Git LFS; NOT re-downloadable from GEO. GSE149080 publishes the
+  shipped via the Zenodo release; NOT re-downloadable from GEO. GSE149080 publishes the
   mESC track only as an mm9 bigWig while this repository is entirely mm10;
   the shipped bigWig and narrowPeak are author-reprocessed mm10 versions
   (re-aligned, MACS2 peak re-calling, RPGC normalization; GEO publishes no
   peak calls for these samples). The GSE211123 bigWig on GEO is mm10 but was
   re-processed by the same pipeline, so it also differs from the GEO file.
-  `data/download_data.sh` therefore does not download these files; it only
-  checks that the shipped LFS copies are materialized.
+  `data/download_data.sh` therefore does not download these files from GEO.
 
 ---
 
@@ -347,12 +348,14 @@ See `README.md#software-requirements` for the full package list.
 ### scBridge errors
 scBridge is not required. The inputs used by the figures are shipped in
 `fig3/results/scBridge/` and `fig4/results/scBridge/`; if they are missing,
-re-clone or re-download the repository (they are regular Git files, not LFS).
+re-clone or re-download the repository (they are regular Git files).
 
-### LFS files are tiny "pointer" files
-If bigWigs or `.Rds` files are only ~130 bytes, git-lfs did not materialize
-them. Run:
+### Large data files are missing
+The big data files (bigWigs, author-provided `.Rds` objects, PQS scores) are
+not stored in git; they come from the Zenodo release
+(DOI 10.5281/zenodo.23862054). Run:
 ```bash
-git lfs install
-git lfs pull
+bash data/download_data.sh
 ```
+This downloads the Zenodo release zip, extracts the required data files into
+`data/` and deletes the zip.

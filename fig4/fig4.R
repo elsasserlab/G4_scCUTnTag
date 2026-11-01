@@ -309,8 +309,8 @@ if (run_panel("C")) {
     stop(
       "Panel C requires the following files, but some are missing:\n  ",
       paste(missing, collapse = "\n  "),
-      "\nRun 'bash data/download_data.sh' first, and 'git lfs pull' in the\n",
-      "repository root (the whole-population RPGC bigWig is tracked via LFS)."
+      "\nRun 'bash data/download_data.sh' first (the whole-population\n",
+      "RPGC bigWig comes from the Zenodo release of this repository)."
     )
   }
     # Match Figure 1F exactly: classify fixed summit-centered +/-500 bp

@@ -5,7 +5,7 @@
 ## Data sources
 
 - **Unsorted mouse-brain G4 scCUT&Tag (GSE291468, GSM8836087)** — `GSM8836087_unsorted_Seurat_object.Rds`, `GSM8836087_unsorted_mouse_brain/CellRanger/fragments.tsv.gz`, per-cluster narrowPeak files (`unsorted_cluster_0_peaks.narrowPeak`, `unsorted_cluster_1_peaks.narrowPeak`), RPGC bigWigs (`cluster0_RPGC.bw`, `cluster1_RPGC.bw`)
-- **Sorted GFP+ brain G4 scCUT&Tag (GSE291468, GSM8836086)** — `GSM8836086_GFPpos_Seurat_object.Rds`, `GSM8836086_GFP_sorted_mouse_brain/CellRanger/peaks.bed` (shipped; not published on GEO), `GSM8836086_GFP_sorted_mousebrain.rpgc.bw` (shipped via Git LFS; not published on GEO)
+- **Sorted GFP+ brain G4 scCUT&Tag (GSE291468, GSM8836086)** — `GSM8836086_GFPpos_Seurat_object.Rds`, `GSM8836086_GFP_sorted_mouse_brain/CellRanger/peaks.bed` (shipped; not published on GEO), `GSM8836086_GFP_sorted_mousebrain.rpgc.bw` (shipped with the Zenodo release; not published on GEO)
 - **Zeisel et al. neuronal scRNA-seq** — `scRNA_Seq-Zeisel_et_al-neuron.Rds`
 - **PQS scores** — `PQS_scores.mm10.bw`
 - **Mouse gene annotation** — EnsDb.Mmusculus.v79
