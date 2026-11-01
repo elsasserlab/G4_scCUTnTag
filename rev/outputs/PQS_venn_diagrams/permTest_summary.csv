@@ -1,0 +1,5 @@
+"comparison","chromosome","ntimes","observed_overlap","mean_expected","fold_enrichment","zscore","pvalue_reported"
+"MEF/ESC combined","chr1",1000,11560,4438.1,2.6,77.65,"p < 0.001"
+"GFP+ combined","chr1",1000,5954,2122.8,2.8,67.51,"p < 0.001"
+"Unsorted combined","chr1",1000,7136,2616.3,2.73,68.69,"p < 0.001"
+"GSE198467 GFP+ sorted scATAC","chr1",1000,34273,11527.2,2.97,145.52,"p < 0.001"

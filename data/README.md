@@ -33,7 +33,6 @@ GSM8836086_Predicted_Mature_oligodendrocytes_RPGC.bw
 GSM8836086_Predicted_Olfactory_ensheathing_cells_RPGC.bw
 GSM8836086_Predicted_Pericytes_RPGC.bw
 GSM8836086_Predicted_Vascular_endothelial_cells_RPGC.bw
-GSM8836086_highly_predicted_Astrocytes_RPGC.bw
 GSM8836086_Unreliable_predictions_RPGC.bw
 
 ### Step 2: Generate additional bigwigs
@@ -42,10 +41,8 @@ Generation of smoothed bigwigs (`data/GSE291468/regenerate_bigwigs.sh`) is neces
 The script also can be used to regenerate the deduplicated bigwigs, but these commands are commented out by default
 
 ```bash
-cd GSE291468
-bash regenerate_bigwigs.sh
-# or submit to cluster:
-sbatch regenerate_bigwigs.sbatch LABEL OUTPUT_BW [SMOOTH_BP]
+# From the repository root
+bash data/GSE291468/regenerate_bigwigs.sh
 ```
 
 The regeneration script needs:
@@ -58,8 +55,8 @@ All auxiliary files are included in the repository and tracked by git (not gitig
 ### Step 3: Generate figures
 
 ```bash
-cd ..
 Rscript fig1/fig1.R
+Rscript fig2/seurat_integration.R
 Rscript fig2/fig2.R
 Rscript fig3/fig3.R
 Rscript fig4/fig4.R
@@ -71,9 +68,8 @@ Rscript fig4/fig4.R
 data/
 ├── download_data.sh          # Download all GEO data (run first)
 ├── GSE291468/regenerate_bigwigs.sh     # Optional regeneration (smooth150 pair)
-├── GSE291468/regenerate_bigwigs.sbatch # SLURM submission for regeneration
 ├── README.md                 # This file
-├── .gitignore_data           # Git ignore rules for data files
+├── ../.gitignore             # Git ignore rules for data files
 ├── genome/                   # Reference genome (shipped: ~42M)
 ├── cCRE/                     # Mouse brain cCRE with H3K27ac (shipped: ~1M)
 ├── pqsfinder/                # PQS predictions (shipped: ~407M)
@@ -81,8 +77,8 @@ data/
 ├── GSE163484/                # Bartosovic scRNA-seq (downloaded from GEO)
 ├── Zeisel2018/               # Zeisel neuron scRNA-seq Rds + processing script (author-provided)
 ├── GSE198467/                # Brain snATAC-seq (downloaded from GEO)
-├── GSE149080/                # mESC ATAC-seq (downloaded from GEO)
-├── GSE211123/                # 3T3 ATAC-seq (downloaded from GEO)
+├── GSE149080/                # mESC ATAC-seq (bigWig downloaded; narrowPeak shipped)
+├── GSE211123/                # 3T3 ATAC-seq (bigWig downloaded; narrowPeak shipped)
 ├── GSE217860/                # 3T3 G4 CUT&Tag (downloaded from GEO)
 └── GSE90894/                 # Chronis mESC/MEF RNA-seq table (downloaded from GEO)
 ```
@@ -100,15 +96,21 @@ Our scG4 CUT&Tag data from three experiments:
 
 - **GSE163484**: Bartosovic et al. mouse brain scRNA-seq (Fig 2-3 reference)
 - **Zeisel2018**: Zeisel et al. neuron scRNA-seq (Fig 4 reference)
-- **GSE198467**: Brain snATAC-seq (Fig 4 reference)
-- **GSE149080**: mESC ATAC-seq (bulk reference)
-- **GSE211123**: 3T3 ATAC-seq (bulk reference)
+- **GSE198467**: Brain snATAC-seq (Fig 4 reference). The GEO Seurat object
+  (`GSE198467_ATAC_Seurat_object_clustered_renamed.Rds`) contains only broad
+  peak windows (median ~3.7 kb) with no summit offsets. Consensus peaks with
+  real summits are re-called from the raw fragments file
+  (`GSE198467_ATAC_fragments.tsv.gz`, downloaded from GEO, gitignored) by
+  `data/GSE198467/reprocess_atac_peaks.sh` (MACS2, q=1e-6, ~93k peaks):
+  `GSE198467_atac_consensus_peaks.narrowPeak`.
+- **GSE149080**: mESC ATAC-seq (bulk reference; RPGC bigWig downloaded, narrowPeak shipped because GEO has no peak file)
+- **GSE211123**: 3T3 ATAC-seq (bulk reference; RPGC bigWig downloaded, narrowPeak shipped because GEO has no peak file)
 - **GSE217860**: 3T3 G4 CUT&Tag (bulk reference)
 - **GSE90894**: Chronis mESC/MEF RNA-seq table
 
 ### Genome Resources
 
-- **genome/**: mm10 chromosome sizes, GTF annotation
+- **genome/**: mm10 chromosome sizes (the GENCODE M25 GTF is downloaded by `download_data.sh`)
 - **cCRE/**: Mouse brain cCRE with H3K27ac signal
 - **pqsfinder/**: G-quadruplex predicting sequences (PQS)
 
@@ -117,7 +119,7 @@ Our scG4 CUT&Tag data from three experiments:
 Downloaded files retain their GEO accession numbers (GSM prefix) for traceability.
 Some files are renamed for convenience (e.g., `GSM8836088_cluster0_RPGC.bw`).
 
-See `../FIGURE_REPRODUCIBILITY.md` for detailed file-to-figure mapping.
+See the "GEO File-to-Figure Map" in `../README.md` for detailed file-to-figure mapping.
 
 ## BigWig Regeneration Details
 
@@ -141,10 +143,11 @@ The Seurat cluster bigwigs (cluster_0-3) are also regenerated for consistency.
 ### Shipped with the repository (~651 MB)
 These files are tracked by git and synced when you clone the repo:
 
-- **Reference genome** (`genome/`, ~42M): mm10 chrom.sizes, GTF, eG4, TSS regions, TPM table
+- **Reference genome** (`genome/`, ~42M tracked): mm10 chrom.sizes, eG4, TSS regions, TPM table (the GENCODE GTF is downloaded by `download_data.sh`)
 - **cCRE** (`cCRE/`, ~1M): Li et al. mouse brain cCRE with H3K27ac
 - **PQS predictions** (`pqsfinder/`, ~407M): Genome-wide PQS scores (bed + bigWig)
-- **GSE291468 metadata** (~54M): CellRanger CSV/TSV files, Seurat cluster barcodes
+- **GSE291468 auxiliary tables** (~0.25M): scBridge cell-group barcodes and Seurat cluster barcodes
+- **Bulk ATAC narrowPeaks** (~11M): GSE149080 and GSE211123 peak calls used by Fig 1 and revision F18 (not distributed by GEO)
 - **Corrected bigWigs** (~158M): 9 GSM8836086 bigWigs with duplicates removed
 - **Scripts**: `download_data.sh`, `regenerate_bigwigs.sh`, `filter_pqs.sh`, etc.
 
@@ -153,11 +156,12 @@ Run `bash download_data.sh` to download these before generating figures:
 
 - **GSE163484**: Bartosovic scRNA-seq (counts CSV + annotation CSV)
 - **GSE198467**: Brain snATAC-seq
-- **GSE149080**: mESC ATAC-seq
-- **GSE211123**: 3T3 ATAC-seq
+- **GSE149080**: mESC ATAC-seq RPGC bigWig (narrowPeak is shipped)
+- **GSE211123**: 3T3 ATAC-seq RPGC bigWig (narrowPeak is shipped)
 - **GSE217860**: 3T3 G4 CUT&Tag
 - **GSE90894**: Chronis RNA-seq table
 - **GSE291468**: Most bigWigs, Seurat objects, narrowPeak files
+- **genome/**: GENCODE M25 mm10 GTF annotation
 
 ### Author-provided Seurat objects (not on GEO)
 
@@ -173,7 +177,7 @@ size). A direct download link (e.g. data-repository/Zenodo) will be added to
 | `scRNA_Seq-mouse_brain.Rds` | Bartosovic et al., *Nat Biotechnol* 2021 (GSE163484); author-provided Seurat object | `GSE163484/scRNA_Seq-mouse_brain.Rds` |
 | `scRNA_Seq-Zeisel_et_al-neuron.Rds` | Zeisel et al., *Cell* 2018, 174:999-1014, DOI: 10.1016/j.cell.2018.06.021 (mousebrain.org); processed Seurat object of the neuron population, built by `Zeisel2018/processing_neuron_data.R` from the (now offline) level-2 neuron loom files | `Zeisel2018/scRNA_Seq-Zeisel_et_al-neuron.Rds` |
 
-See `.gitignore_data` for the complete list of gitignored files.
+See `../.gitignore` for the complete list of gitignored files.
 
 ## Troubleshooting
 
@@ -184,4 +188,4 @@ Check `download_data.sh` output for failed downloads. Some GEO URLs may require 
 The supplied `GSE291468/GSM8836086_*_RPGC.bw` files are already fixed; do not re-download the GEO originals (masked in download_data.sh).
 
 ### Path errors in figure scripts
-Scripts should use relative paths from repo root. Check `../FIGURE_REPRODUCIBILITY.md` for expected file locations.
+Scripts should use paths derived from the repository root. See `../README.md` for expected file locations.

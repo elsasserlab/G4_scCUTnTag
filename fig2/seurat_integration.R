@@ -39,7 +39,7 @@ args = parser$parse_args()
 # add working directory
 # work dir for sorted data: "../../results/Seurat/GFP_sorted_mousebrain/res0.8/"
 if (all(sapply(args, is.null))) {
-  print("Script is running without sbatch.")
+  print("Script is running interactively.")
   g4 = file.path(ROOT, "data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds")
   workdir = file.path(SCRIPT_DIR, "results/integration")
   rna = file.path(ROOT, "data/GSE163484/scRNA_Seq-mouse_brain.Rds")

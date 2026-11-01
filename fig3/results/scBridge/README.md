@@ -1,7 +1,9 @@
 # scBridge Output Files
 
+These files are shipped precomputed. scBridge is **not** a dependency of this
+repository and does not need to be installed or run to reproduce any figure.
+
 ## Contents
-This directory contains the output files from scBridge multi-omics integration:
 
 - `umap_coembedded.csv` (516KB) - UMAP coordinates for co-embedded cells
 - `scbridge_predictions.csv` (83KB) - Cell type predictions for G4 cells
@@ -10,52 +12,29 @@ This directory contains the output files from scBridge multi-omics integration:
 
 **Total size:** ~840KB
 
-## How These Were Generated
+## Provenance
 
-These files were generated using scBridge (Zhang et al., 2022) with the following workflow:
+The files were generated once with scBridge
+(Li et al., 2023, *Nature Communications*;
+<https://github.com/XLearning-SCU/scBridge>) from:
 
-### Input Data
-1. **G4 scCUT&Tag data:** Processed Seurat object from `data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds`
-2. **scRNA-seq reference:** Bartosovic et al. mouse brain data from `data/GSE163484/scRNA_Seq-mouse_brain.Rds`
+1. G4 scCUT&Tag gene activity scores:
+   `data/GSE291468/GSM8836086_GFPpos_Seurat_object.Rds`
+2. Bartosovic scRNA-seq reference:
+   `data/GSE163484/scRNA_Seq-mouse_brain.Rds`
 
-### Generation Steps
+`fig3/scbridge_input.R` documents how the two input tables were prepared. The
+CSV files in this directory were copied from the scBridge output directory after
+that single run.
 
-1. **Prepare input files** (run from fig3/):
-   ```bash
-   Rscript scbridge_input.R
-   ```
-   This creates:
-   - Gene activity scores for G4 data
-   - Normalized counts for scRNA-seq
-   - Saves to `../results/scBridge/input/`
+### scBridge parameters used
 
-2. **Run scBridge integration** (requires GPU):
-   ```bash
-   # scBridge requires GPU and specific environment
-   # See https://github.com/Genentech/scBridge
-   python scbridge_main.py \
-     --g4_gene_activity ../results/scBridge/input/GFPsorted-gene_activity_scores.csv \
-     --rna_counts ../results/scBridge/input/GSE163484_Bartosovic_et_al_counts.csv \
-     --output_dir ../results/scBridge/output/GFPsorted_Bartosovic
-   ```
+- Integration method: multi-omics CCA
+- UMAP dimensions: 2
+- Prediction method: label transfer from scRNA-seq to G4
 
-3. **Extract outputs:**
-   The CSV files in this directory were copied from scBridge output directory after successful integration.
+## Figure usage
 
-### scBridge Parameters Used
-- **Integration method:** Multi-omics CCA
-- **UMAP dimensions:** 2
-- **Prediction method:** Label transfer from scRNA-seq to G4
-
-### Regeneration Notes
-
-⚠️ **GPU Required:** scBridge requires CUDA-enabled GPU for training.
-
-If you need to regenerate these files:
-1. Install scBridge: `pip install scbridge`
-2. Ensure CUDA is available
-3. Run the workflow above
-4. Copy CSV outputs to this directory
-
-### Citation
-Zhang, Q., et al. (2022). "scBridge: A deep learning framework for multi-omics single-cell data integration." *Bioinformatics*.
+`fig3/fig3.R` reads `umap_coembedded.csv`, `scbridge_predictions.csv` and
+`scbridge_reliability.csv`; `fig3/cicero.R` reads `scbridge_predictions.csv`.
+No scBridge execution is required.

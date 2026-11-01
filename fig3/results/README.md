@@ -4,13 +4,14 @@
 
 This directory contains intermediate files required by fig3 production scripts:
 
-### scBridge/ (shipped - GPU required)
+### scBridge/ (shipped)
 - `umap_coembedded.csv` - UMAP coordinates
 - `scbridge_predictions.csv` - Cell type predictions
 - `scbridge_reliability.csv` - Reliability scores
 - `predictions_reliability.csv` - Combined data
 
-**Why shipped:** scBridge requires GPU for training (~1 hour computation)
+**Why shipped:** scBridge is not a dependency; precomputed outputs avoid
+installing scBridge and do not require a GPU.
 
 ### cicero/ (shipped - computationally intensive)
 - `cicero_GFPsorted*.Rds` - combined, AST, and non-AST Cicero connections
@@ -26,12 +27,6 @@ for routine figure generation.
 
 If you need to regenerate these files:
 
-### scBridge (requires GPU)
-```bash
-Rscript scbridge_input.R
-# Then run scBridge with GPU...
-```
-
 ### cicero
 ```bash
 # From the repository root; requires cicero and monocle3
@@ -43,5 +38,5 @@ Rscript fig3/cicero.R
 
 These files are kept in the repository because:
 1. They are required by production scripts (`fig3.R`, `cicero.R`)
-2. Regeneration requires significant compute resources (GPU, 1-2 hours)
+2. Regeneration of the Cicero part takes 1-2 hours; scBridge is not required
 3. Total size is small (~14MB)

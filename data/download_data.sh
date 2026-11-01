@@ -19,13 +19,12 @@
 #   ├── GSE217860/           Published bulk 3T3 G4 CUT&Tag
 #   └── GSE90894/            Chronis et al. mESC/MEF RNA-seq RPKM table
 #
-# Usage:
-#   cd data
-#   bash download_data.sh              # download everything
-#   bash download_data.sh --fig1       # only Fig 1 data
-#   bash download_data.sh --fig2       # only Fig 2 data
-#   bash download_data.sh --fig4       # only Fig 4 data
-#   bash download_data.sh --revisions  # only revision data
+# Usage (from the repository root):
+#   bash data/download_data.sh              # download everything
+#   bash data/download_data.sh --fig1       # only Fig 1 data
+#   bash data/download_data.sh --fig2       # only Fig 2 data
+#   bash data/download_data.sh --fig4       # only Fig 4 data
+#   bash data/download_data.sh --revisions  # only revision data
 #
 # Requirements: curl, gzip
 #
@@ -313,6 +312,11 @@ if [[ "$FIG" == "all" || "$FIG" == "--fig4" || "$FIG" == "--revisions" ]]; then
   echo "--- GSE198467: Brain snATAC-seq ---"
   download_and_unzip "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE198nnn/GSE198467/suppl/GSE198467_ATAC_Seurat_object_clustered_renamed.Rds.gz" \
            "${DATA}/GSE198467/GSE198467_ATAC_Seurat_object_clustered_renamed.Rds"
+
+  # Raw ATAC fragments used to re-call consensus peaks with MACS2
+  # (summit-containing narrowPeak), see data/GSE198467/reprocess_atac_peaks.sh
+  download_and_unzip "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE198nnn/GSE198467/suppl/GSE198467_ATAC_fragments.tsv.gz" \
+           "${DATA}/GSE198467/GSE198467_ATAC_fragments.tsv.gz"
 fi
 
 # ======================================================================
@@ -339,6 +343,16 @@ if [[ "$FIG" == "all" || "$FIG" == "--revisions" ]]; then
   echo "--- Chronis et al. mESC/MEF RNA-seq (GSE90894) ---"
   download "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE90nnn/GSE90894/suppl/GSE90894_RPKM_mRNAseq_table.xlsx" \
            "${DATA}/GSE90894/GSE90894_RPKM_mRNAseq_table.xlsx"
+fi
+
+# ======================================================================
+# GENCODE mm10 annotation (Fig 1 feature distribution and revision F01)
+# ======================================================================
+if [[ "$FIG" == "all" || "$FIG" == "--fig1" || "$FIG" == "--revisions" ]]; then
+  echo ""
+  echo "--- GENCODE mm10 annotation ---"
+  download "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M25/gencode.vM25.annotation.gtf.gz" \
+           "${DATA}/genome/mm10_.annotation.gtf.gz"
 fi
 
 echo ""

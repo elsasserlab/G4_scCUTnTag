@@ -270,9 +270,20 @@ if ("C" %in% run_panels) {
     list(label = label, n_peaks = n_peaks, n_overlap = n_overlap, pct = pct)
   }
   
-  oc0 <- compute_pqs_overlap(cl0_only, pqs_gr, "MEF (cluster 0)")
-  oc1 <- compute_pqs_overlap(cl1_only, pqs_gr, "mESC (cluster 1)")
-  oc_shared <- compute_pqs_overlap(both, pqs_gr, "shared (both)")
+  # Panel C uses the original full-width narrowPeak peaks (not the
+  # summit-centred +-250 bp windows used by panels E/F).
+  peaks0 <- cl0_np
+  peaks1 <- cl1_np
+  p_hits <- findOverlaps(peaks0, peaks1)
+  p_shared0 <- unique(queryHits(p_hits))
+  p_shared1 <- unique(subjectHits(p_hits))
+  pc0_only  <- peaks0[-p_shared0]
+  pc1_only  <- peaks1[-p_shared1]
+  pc_shared <- GenomicRanges::reduce(sort(c(peaks0[p_shared0], peaks1[p_shared1])))
+
+  oc0 <- compute_pqs_overlap(pc0_only, pqs_gr, "MEF (cluster 0)")
+  oc1 <- compute_pqs_overlap(pc1_only, pqs_gr, "mESC (cluster 1)")
+  oc_shared <- compute_pqs_overlap(pc_shared, pqs_gr, "shared (both)")
   
   bar_mesc_mef <- data.frame(
     cluster = c("MEF (cluster 0)", "mESC (cluster 1)", "shared (both)"),
@@ -298,7 +309,7 @@ if ("C" %in% run_panels) {
     gr
   }
 
-  all_union <- GenomicRanges::reduce(sort(c(gr0, gr1)))
+  all_union <- GenomicRanges::reduce(sort(c(peaks0, peaks1)))
   cat(sprintf("  Union of all MEF/ESC peaks: %s peaks\n",
               format(length(all_union), big.mark = ",")))
 

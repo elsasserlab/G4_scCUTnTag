@@ -7,7 +7,7 @@
 - **Sorted GFP+ brain G4 scCUT&Tag (GSE291468, GSM8836086)** — `GSM8836086_GFPpos_Seurat_object.Rds`, gene-activity (GA) assay, peak assay, `GSM8836086_GFP_sorted_mouse_brain/CellRanger/fragments.tsv.gz`
 - **Brain scRNA-seq reference (GSE163484, Bartosovic et al.)** — processed Seurat object with cell_type annotations
 - **scBridge co-embedding** — precomputed outputs: `umap_coembedded.csv`, `scbridge_predictions.csv` (barcodes_Astrocytes.tsv, barcodes_non_AST.tsv), `scbridge_reliability.csv`
-- **Cicero co-accessibility** — shipped AST and non-AST connection tables in `results/cicero/`
+- **Cicero co-accessibility** — shipped AST and non-AST connection tables in `fig3/results/cicero/`
 - **Mouse-brain cCREs with H3K27ac** — `Li_et_al-mousebrain_cCRE_with_K27ac.bed`
 - **ENCODE4 Registry cCREs** — `data/genome/cCRE.mm10.bed` (9-column BED, itemRgb encodes the regulatory class)
 - **Predicted AST/non-AST G4 signal** — unsmoothed RPGC bigWigs for GSM8836086

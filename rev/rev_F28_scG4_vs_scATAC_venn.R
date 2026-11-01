@@ -5,6 +5,15 @@
 # Tests whether scG4 signal reflects chromatin accessibility by comparing
 # GFP+ scG4 (GSM8836086) with GFP+ scATAC (GSE198467) from same cell population.
 #
+# scG4 peaks are the merged UNION of the per-cluster MACS2 narrowPeaks
+# (GSM8836086_GFPpos_cluster_{0..3}_peaks.narrowPeak), reduced and
+# restricted to canonical chromosomes (median ~0.5 kb), NOT the pre-merged
+# Seurat rownames (~0.9 kb). Consistent with F12 and F30.
+#
+# scATAC peaks are the MACS2 re-called consensus narrowPeak
+# (data/GSE198467/GSE198467_atac_consensus_peaks.narrowPeak), not the broad
+# author-provided windows (median ~3.7 kb) stored in the Seurat rownames.
+#
 # Output (github/rev/outputs/scG4_vs_scATAC/):
 #   - F28_peak_overlap_venn.pdf
 #   - F28_peak_overlap_stats.csv
@@ -14,7 +23,9 @@ suppressPackageStartupMessages({
   library(Seurat)
   library(Signac)
   library(GenomicRanges)
+  library(rtracklayer)
   library(ggplot2)
+  library(ggplotify)
   library(eulerr)
   library(data.table)
 })
@@ -25,55 +36,45 @@ DATA <- file.path(ROOT, "data")
 OUT_DIR <- file.path(ROOT, "rev/outputs/scG4_vs_scATAC")
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
-# scG4 GFP+ data
-G4_RDS <- file.path(DATA, "GSE291468/GSM8836086_GFPpos_Seurat_object.Rds")
+# scG4 GFP+ data: merged union of the per-cluster MACS2 narrowPeaks
+# (consistent with F12/F30; NOT the pre-merged Seurat rownames)
+G4_PEAK_CLUST <- file.path(DATA, "GSE291468",
+                           paste0("GSM8836086_GFPpos_cluster_", 0:3, "_peaks.narrowPeak"))
+for (f in G4_PEAK_CLUST) stopifnot(file.exists(f))
 
-# scATAC data
-ATAC_RDS <- file.path(DATA, "GSE198467/GSE198467_ATAC_Seurat_object_clustered_renamed.Rds")
+# scATAC data: MACS2 re-called consensus narrowPeak
+ATAC_NARROWPEAK <- file.path(DATA, "GSE198467/GSE198467_atac_consensus_peaks.narrowPeak")
 
 cat("=== Loading data ===\n")
 
-# Load scG4 GFP+ object
-cat("Loading scG4 GFP+ object...\n")
-g4 <- readRDS(G4_RDS)
-cat(sprintf("  Cells: %s, Peaks: %s, Clusters: %s\n",
-            ncol(g4), nrow(g4), paste(levels(Idents(g4)), collapse=", ")))
+# Merge GFP+ cluster narrowPeaks into a union (canonical only)
+cat("Merging GFP+ cluster narrowPeaks into a union...\n")
+g4_clusters <- lapply(G4_PEAK_CLUST, function(f) import(f, format = "narrowPeak"))
+for (i in seq_along(g4_clusters)) {
+  cat(sprintf("  GFP+ cluster %d peaks: %s\n", i - 1,
+              format(length(g4_clusters[[i]]), big.mark = ",")))
+}
+CANONICAL <- c(paste0("chr", 1:19), "chrX", "chrY")
+g4_peaks_gr <- reduce(do.call(c, g4_clusters))
+g4_peaks_gr <- g4_peaks_gr[as.character(seqnames(g4_peaks_gr)) %in% CANONICAL]
+cat(sprintf("  scG4 peaks (canonical union): %s (median width %d bp)\n",
+            format(length(g4_peaks_gr), big.mark = ","),
+            median(width(g4_peaks_gr))))
 
-# Extract peak coordinates from Seurat object rownames
-cat("Extracting scG4 peak coordinates from Seurat object...\n")
-g4_peak_names <- rownames(g4)
-g4_peak_parts <- strsplit(g4_peak_names, "[-:]")
-g4_peaks_gr <- GRanges(
-  seqnames = sapply(g4_peak_parts, `[`, 1),
-  ranges = IRanges(
-    start = as.integer(sapply(g4_peak_parts, `[`, 2)),
-    end = as.integer(sapply(g4_peak_parts, `[`, 3))
-  )
-)
-cat(sprintf("  Total scG4 peaks: %s\n", format(length(g4_peaks_gr), big.mark = ",")))
-
-# Load scATAC object
-cat("Loading scATAC object...\n")
-atac <- readRDS(ATAC_RDS)
-cat(sprintf("  Cells: %s, Peaks: %s, Clusters: %s\n",
-            ncol(atac), nrow(atac), paste(levels(Idents(atac)), collapse=", ")))
-
-# Extract scATAC peak coordinates
-cat("Extracting scATAC peak coordinates...\n")
-atac_peak_names <- rownames(atac)
-atac_peak_parts <- strsplit(atac_peak_names, "[-:]")
-atac_peaks_gr <- GRanges(
-  seqnames = sapply(atac_peak_parts, `[`, 1),
-  ranges = IRanges(
-    start = as.integer(sapply(atac_peak_parts, `[`, 2)),
-    end = as.integer(sapply(atac_peak_parts, `[`, 3))
-  )
-)
+# scATAC peak coordinates: use the MACS2 re-called consensus narrowPeak
+# (the Seurat rownames are broad windows with no summit offsets; see
+# data/GSE198467/reprocess_atac_peaks.sh).
+cat("Loading re-called scATAC consensus narrowPeak...\n")
+ATAC_NARROWPEAK <- file.path(DATA, "GSE198467/GSE198467_atac_consensus_peaks.narrowPeak")
+stopifnot(file.exists(ATAC_NARROWPEAK))
+atac_peaks_gr <- import(ATAC_NARROWPEAK, format = "narrowPeak")
 # Filter to canonical chromosomes
 CANONICAL <- c(paste0("chr", 1:19), "chrX", "chrY")
 canonical_mask <- as.character(seqnames(atac_peaks_gr)) %in% CANONICAL
 atac_peaks_gr <- atac_peaks_gr[canonical_mask]
-cat(sprintf("  Total scATAC peaks (canonical): %s\n", format(length(atac_peaks_gr), big.mark = ",")))
+cat(sprintf("  Total scATAC peaks (canonical): %s (median width %d bp)\n",
+            format(length(atac_peaks_gr), big.mark = ","),
+            median(width(atac_peaks_gr))))
 
 # ===========================================================================
 # Peak Overlap Analysis (using reduce for symmetric Venn diagram)
@@ -116,20 +117,24 @@ cat(sprintf("  scATAC-only: %s (%.1f%%)\n", format(n_atac_only, big.mark = ","),
 cat("\nCreating Euler diagram...\n")
 fit <- euler(c("scG4" = n_g4_only, "scATAC" = n_atac_only, "scG4&scATAC" = n_overlap))
 
-p_venn <- plot(fit,
-               fills = list(fill = c("#9ecae1", "#fc9272")),
-               edges = list(col = "black", lwd = 1.5),
-               labels = NULL,  # Remove set labels (use totals outside instead)
-               quantities = list(font = 2, cex = 2.0, digits = 0))  # Show counts in regions
+# plot.euler() returns a gTree grob (not a ggplot), so wrap it with
+# ggplotify before adding ggplot annotations.
+p_venn <- ggplotify::as.ggplot(
+  plot(fit,
+       fills = list(fill = c("#9ecae1", "#fc9272")),
+       edges = list(col = "black", lwd = 1.5),
+       labels = FALSE,  # Remove set labels (use totals outside instead)
+       quantities = list(font = 2, cex = 2.0, digits = 0))  # Show counts in regions
+)
 
-# Add original peak counts as text outside the circles
+# Add original peak counts as text outside the circles (panel coords are 0-1)
 orig_g4 <- length(g4_peaks_gr)
 orig_atac <- length(atac_peaks_gr)
 p_venn <- p_venn +
-  annotate("text", x = -1.8, y = 0.3, label = sprintf("scG4\n%s", format(orig_g4, big.mark = ",")),
-           hjust = 1, vjust = 0.5, size = 4.5, fontface = "bold", color = "#9ecae1") +
-  annotate("text", x = 1.8, y = -0.3, label = sprintf("scATAC\n%s", format(orig_atac, big.mark = ",")),
-           hjust = 0, vjust = 0.5, size = 4.5, fontface = "bold", color = "#fc9272")
+  annotate("text", x = 0.03, y = 0.75, label = sprintf("scG4\n%s", format(orig_g4, big.mark = ",")),
+           hjust = 0, vjust = 0.5, size = 4.5, fontface = "bold", color = "#9ecae1") +
+  annotate("text", x = 0.97, y = 0.28, label = sprintf("scATAC\n%s", format(orig_atac, big.mark = ",")),
+           hjust = 1, vjust = 0.5, size = 4.5, fontface = "bold", color = "#fc9272")
 
 ggsave(file.path(OUT_DIR, "F28_peak_overlap_venn.pdf"), p_venn, width = 5.5, height = 4.5, dpi = 300)
 cat("  Saved F28_peak_overlap_venn.pdf\n")
