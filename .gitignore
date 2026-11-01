@@ -93,6 +93,10 @@ data/GSE291468/GSM*/CellRanger/peaks.bed
 
 # Smoothed variants are too large to sync; regenerate via regenerate_bigwigs.sh
 data/GSE291468/*.smooth150.bw
+# TEMPORARY: shipped via Git LFS until a Zenodo DOI is set up, then these
+# negations are removed again and download_data.sh fetches them from Zenodo
+!data/GSE291468/GSM8836086_Predicted_Astrocytes_RPGC.smooth150.bw
+!data/GSE291468/GSM8836086_Predicted_non-Astrocytes_RPGC.smooth150.bw
 
 # EXCEPTION: whole-population RPGC bigWig for the GFP+ sorted sample.
 # GEO does not publish this file; we ship the regenerated duplicate-free
